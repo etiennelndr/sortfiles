@@ -72,9 +72,9 @@ def show(path, allFiles, allCreationTime):
 
 def switchMonth(month):
     """
-    Modify an english month to a french one. For example: 'Jan' becomes 'Janvier'.
+    Translate an english month to a french one. For example: 'Jan' becomes 'Janvier'.
 
-    month : the month that will be transformed
+    month : the month that will be translated
     """
     return {
         'Jan' : 'Janvier',

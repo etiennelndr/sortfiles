@@ -1,3 +1,4 @@
+#!/usr/bin/python
 try:
     from os.path import isfile, join, isdir
     import stat
@@ -60,18 +61,18 @@ def show(path, allFiles, allCreationTime):
 
 def switchMonth(month):
     return {
-        'Jan' : 'Janvier',
-        'Feb' : 'Fevrier',
-        'Mar' : 'Mars',
-        'Apr' : 'Avril',
-        'May' : 'Mai',
-        'Jun' : 'Juin',
-        'Jul' : 'Juillet',
-        'Aug' : 'Aout',
-        'Sep' : 'Septembre',
-        'Oct' : 'Octobre',
-        'Nov' : 'Novembre',
-        'Dec' : 'Decembre',
+        'Jan' : '(01)Janvier',
+        'Feb' : '(02)Fevrier',
+        'Mar' : '(03)Mars',
+        'Apr' : '(04)Avril',
+        'May' : '(05)Mai',
+        'Jun' : '(06)Juin',
+        'Jul' : '(07)Juillet',
+        'Aug' : '(08)Aout',
+        'Sep' : '(09)Septembre',
+        'Oct' : '(10)Octobre',
+        'Nov' : '(11)Novembre',
+        'Dec' : '(12)Decembre',
     }[month]
 
 def transformToPath(path, date):
@@ -81,7 +82,7 @@ def transformToPath(path, date):
 def transformTimeToDate(time):
     """Concatenate the month and the year"""
     splittime = time.split()
-    return switchMonth(splittime[1]) + "-" + splittime[4] # [1]=month and [4]=year
+    return  splittime[4] + "_" + switchMonth(splittime[1]) # [4]=year and [1]=month
     
 def createDirectories(path, alltime, directories):
     """Create new directories thanks to the date of creation of some files"""

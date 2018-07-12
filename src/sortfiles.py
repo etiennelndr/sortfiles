@@ -8,7 +8,12 @@ except ImportError as err:
     exit(err)
 
 def retrieveCreationTimeOfFile(path, file):
-    """A simple way to retrieve the creation time of a file"""
+    """
+    A simple way to retrieve the creation time of a file
+    
+    path : path in which the file is supposed to be\n
+    file : the file for which we have to retrieve the creation time\n
+    """
     infos = os.stat(path + file)
     timeOfFile = time.asctime(time.localtime(infos[stat.ST_MTIME]))
     return timeOfFile
@@ -18,9 +23,9 @@ def retrieveAll(path, elements, alltime, filesToMove, isInDir):
     Retrieve recursively all of the files in a specific directory.
     It returns the files which are in a directory and that will be moved (ot not).
 
-    path : the path in which all the files and directories are
-    elements : the files
-    allTime : the time
+    path        : the path in which all the files and directories are\n
+    elements    : the files\n
+    allTime     : the time\n
     filesToMove : potential file to move from a directory to the path
     """
     all = [f for f in os.listdir(path)]
@@ -36,6 +41,13 @@ def retrieveAll(path, elements, alltime, filesToMove, isInDir):
     return filesToMove
 
 def moveFilesToCorrectPath(path, alltime, filesToMove):
+    """
+    Move files from their path to an other path.
+
+    path        : the path where all files will be after the execution\n
+    alltime     : needed to not process some files\n
+    filesToMove : files which will be moved
+    """
     for f in filesToMove:
         isAlreadyMoved = False
         for time in alltime:
@@ -60,6 +72,11 @@ def show(path, allFiles, allCreationTime):
         print(allFiles[i] + " : " + allCreationTime[i])
 
 def switchMonth(month):
+    """
+    Translate an english month to a french one. For example: 'Jan' becomes 'Janvier'.
+
+    month : the month that will be translated
+    """
     return {
         'Jan' : '(01)Janvier',
         'Feb' : '(02)Fevrier',
@@ -76,16 +93,31 @@ def switchMonth(month):
     }[month]
 
 def transformToPath(path, date):
-    """Concatenate the path and the date to create an absolute path"""
+    """
+    Concatenate the path and the date to create an absolute path.
+    
+    path : absolute path\n
+    date : date (format: Month-Year)
+    """
     return path + date + "/"
 
 def transformTimeToDate(time):
-    """Concatenate the month and the year"""
+    """
+    Concatenate the month and the year.
+    
+    time : the time to transform
+    """
     splittime = time.split()
     return  splittime[4] + "_" + switchMonth(splittime[1]) # [4]=year and [1]=month
     
-def createDirectories(path, alltime, directories):
-    """Create new directories thanks to the date of creation of some files"""
+def createDirectories(path, alltime):
+    """
+    Create new directories thanks to the date of creation of some files
+    
+    path        : absolute path of the directories\n
+    alltime     : these times will be used to create directories
+    """
+    directories = list()
     for time in alltime:
         # Concatenate the month and the year
         date = transformTimeToDate(time)
@@ -100,7 +132,13 @@ def createDirectories(path, alltime, directories):
                 os.makedirs(newdirectory)
 
 def moveFiles(path, elements, alltime):
-    """Move a file from an old path to a new one"""
+    """
+    Move a file from an old path to a new one
+    
+    path     : absolute path of the file\n
+    elements : files that will be moved\n
+    alltime  : we use the time to create the new path of the file
+    """
     for i in range(0, len(elements)):
         date = transformTimeToDate(alltime[i])
         # Create the new path
@@ -132,14 +170,12 @@ def main():
     # Finally, show the results
     #show(path, elements, alltime)
 
-    # Create a variable for all the future directories
-    directories = list()
-
     # Create the directories
-    createDirectories(path, alltime, directories)
+    createDirectories(path, alltime)
 
     # Now, move the files
     moveFiles(path, elements, alltime)
 
 if __name__== "__main__":
+    # Start the program
     main()

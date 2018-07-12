@@ -4,15 +4,16 @@ try:
     import stat
     import os
     import time
+    import sys
 except ImportError as err:
     exit(err)
 
 def retrieveCreationTimeOfFile(path, file):
     """
-    A simple way to retrieve the creation time of a file
+    A simple way to retrieve the creation time of a file.
     
     path : path in which the file is supposed to be\n
-    file : the file for which we have to retrieve the creation time\n
+    file : the file for which we have to retrieve the creation time
     """
     infos = os.stat(path + file)
     timeOfFile = time.asctime(time.localtime(infos[stat.ST_MTIME]))
@@ -73,7 +74,7 @@ def show(path, allFiles, allCreationTime):
 
 def switchMonth(month):
     """
-    Translate an english month to a french one. For example: 'Jan' becomes 'Janvier'.
+    Translate an english month to a french one. For example: 'Jan' becomes '(01)Janvier'.
 
     month : the month that will be translated
     """
@@ -112,7 +113,7 @@ def transformTimeToDate(time):
     
 def createDirectories(path, alltime):
     """
-    Create new directories thanks to the date of creation of some files
+    Create new directories thanks to the date of creation of some files.
     
     path        : absolute path of the directories\n
     alltime     : these times will be used to create directories
@@ -133,7 +134,7 @@ def createDirectories(path, alltime):
 
 def moveFiles(path, elements, alltime):
     """
-    Move a file from an old path to a new one
+    Move a file from an old path to a new one.
     
     path     : absolute path of the file\n
     elements : files that will be moved\n

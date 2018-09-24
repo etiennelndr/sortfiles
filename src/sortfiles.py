@@ -160,8 +160,11 @@ def main():
 
     # Create the path
     path = sys.argv[1]
-    
-    #path = "/home/etienne/Images/Photos/"
+
+    # Verify if the directory exists
+    if not isdir(path):
+        exit("Error: this directory doesn't exist. Please create it or verify if you haven't made a mistake in the path.")
+
     # Create a variable for all the elements
     elements = list()
     # Create a variable for all the time

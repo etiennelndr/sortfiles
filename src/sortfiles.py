@@ -155,8 +155,13 @@ def moveFiles(path, elements, alltime):
             print(newpath + " already exists.")
 
 def main():
+    if len(sys.argv[1:]) == 0:
+        exit("Error: you must start the program this way -> python sortfiles.py [path]")
+
     # Create the path
-    path = "/home/etienne/Images/Photos/"
+    path = sys.argv[1]
+    
+    #path = "/home/etienne/Images/Photos/"
     # Create a variable for all the elements
     elements = list()
     # Create a variable for all the time

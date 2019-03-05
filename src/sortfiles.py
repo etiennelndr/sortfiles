@@ -55,7 +55,7 @@ def retrieveAll(path, elements, alltime, filesToMove, isInDir):
             if not isDirectoryAutomaticallyCreated(e):
                 filesToMove = retrieveAll(path + e + "/", elements, alltime, filesToMove, True)
             else:
-                print("Can't move files which are in this directory.")
+                print("Can't move files which are in the directory '{}'.".format(e))
         elif isfile(join(path, e)):
             if isInDir:
                 filesToMove.append(path + e)

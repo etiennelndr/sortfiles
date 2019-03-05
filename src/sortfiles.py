@@ -42,12 +42,13 @@ def isDirectoryAutomaticallyCreated(dir):
 def retrieveAll(path, elements, alltime, filesToMove, isInDir):
     """
     Retrieve recursively all of the files in a specific directory.
-    It returns the files which are in a directory and that will be moved (ot not).
+    It returns the files which are in a directory and that are going 
+    to be moved.
 
     path        : the path in which all the files and directories are\n
     elements    : the files\n
     allTime     : the time\n
-    filesToMove : potential file to move from a directory to the path
+    filesToMove : potential files to move from a directory to the path
     """
     all = [f for f in listdir(path)]
     for e in all:
@@ -58,7 +59,7 @@ def retrieveAll(path, elements, alltime, filesToMove, isInDir):
                 print("Can't move files which are in the directory '{}'.".format(e))
         elif isfile(join(path, e)):
             if isInDir:
-                filesToMove.append(path + e)
+                filesToMove.append(join(path, e))
             elements.append(e)
             alltime.append(retrieveCreationTimeOfFile(path, e))
     
@@ -70,7 +71,7 @@ def moveFilesToCorrectPath(path, alltime, filesToMove):
 
     path        : the path where all files will be after the execution\n
     alltime     : needed to not process some files\n
-    filesToMove : files which will be moved
+    filesToMove : files which are going to be moved
     """
     for f in filesToMove:
         isAlreadyMoved = False
@@ -85,7 +86,7 @@ def moveFilesToCorrectPath(path, alltime, filesToMove):
             # Retrieve file name
             splitFilePath = f.split("/")
             fileName = splitFilePath[len(splitFilePath)-1]
-            newpath = path + fileName
+            newpath = join(path, fileName)
             # Now move the file
             rename(oldpath, newpath)
 

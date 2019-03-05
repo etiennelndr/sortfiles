@@ -1,10 +1,10 @@
 #!/usr/bin/python
 try:
-    from os.path import isfile, join, isdir
-    import stat
-    import os
-    import time
-    import sys
+    from os.path import isfile, join, isdir, exists, dirname
+    from stat import ST_MTIME
+    from os import stat, listdir, makedirs, rename
+    from time import asctime, localtime
+    from sys import argv
 except ImportError as err:
     exit(err)
 
@@ -15,9 +15,29 @@ def retrieveCreationTimeOfFile(path, file):
     path : path in which the file is supposed to be\n
     file : the file for which we have to retrieve the creation time
     """
-    infos = os.stat(path + file)
-    timeOfFile = time.asctime(time.localtime(infos[stat.ST_MTIME]))
+    infos = stat(join(path, file))
+    timeOfFile = asctime(localtime(infos[ST_MTIME]))
     return timeOfFile
+
+def isDirectoryAutomaticallyCreated(dir):
+    """
+    Verify the name of the directory -> if it contains a month it returns True, otherwise False.
+    """
+    months = [
+        '(01)Janvier',
+        '(02)Fevrier',
+        '(03)Mars',
+        '(04)Avril',
+        '(05)Mai',
+        '(06)Juin',
+        '(07)Juillet',
+        '(08)Aout',
+        '(09)Septembre',
+        '(10)Octobre',
+        '(11)Novembre',
+        '(12)Decembre'
+    ]
+    return any(month in dir for month in months)
 
 def retrieveAll(path, elements, alltime, filesToMove, isInDir):
     """
@@ -29,10 +49,13 @@ def retrieveAll(path, elements, alltime, filesToMove, isInDir):
     allTime     : the time\n
     filesToMove : potential file to move from a directory to the path
     """
-    all = [f for f in os.listdir(path)]
+    all = [f for f in listdir(path)]
     for e in all:
         if isdir(join(path, e)):
-            filesToMove = retrieveAll(path + e + "/", elements, alltime, filesToMove, True)
+            if not isDirectoryAutomaticallyCreated(e):
+                filesToMove = retrieveAll(path + e + "/", elements, alltime, filesToMove, True)
+            else:
+                print("Can't move files which are in this directory.")
         elif isfile(join(path, e)):
             if isInDir:
                 filesToMove.append(path + e)
@@ -64,7 +87,7 @@ def moveFilesToCorrectPath(path, alltime, filesToMove):
             fileName = splitFilePath[len(splitFilePath)-1]
             newpath = path + fileName
             # Now move the file
-            os.rename(oldpath, newpath)
+            rename(oldpath, newpath)
 
 def show(path, allFiles, allCreationTime):
     print("Files are from " + path)
@@ -100,7 +123,7 @@ def transformToPath(path, date):
     path : absolute path\n
     date : date (format: Month-Year)
     """
-    return path + date + "/"
+    return join(path, date + "/")
 
 def transformTimeToDate(time):
     """
@@ -126,11 +149,11 @@ def createDirectories(path, alltime):
         if date not in directories:
             directories.append(date)
             # Concatenate the path and the date to create an absolute path
-            pathofdir = transformToPath(path, date)
-            newdirectory = os.path.dirname(pathofdir)
+            path_of_dir = transformToPath(path, date)
+            new_directory = dirname(path_of_dir)
             # We need to create a directory if it doesn't exist
-            if not os.path.exists(newdirectory):
-                os.makedirs(newdirectory)
+            if not exists(new_directory):
+                makedirs(new_directory)
 
 def moveFiles(path, elements, alltime):
     """
@@ -147,19 +170,22 @@ def moveFiles(path, elements, alltime):
         # Add the name of the element to the new path
         newpath += elements[i]
         # We need the old file path to move it
-        oldpath = path + elements[i]
+        oldpath = join(path, elements[i])
         # Move file
         if not isfile(newpath):
-            os.rename(oldpath, newpath)
+            rename(oldpath, newpath)
         else:
             print(newpath + " already exists.")
 
 def main():
-    if len(sys.argv[1:]) == 0:
+    """
+    Main method.
+    """
+    if len(argv[1:]) == 0:
         exit("Error: you must start the program this way -> python sortfiles.py [path]")
 
     # Create the path
-    path = sys.argv[1]
+    path = argv[1]
 
     # Verify if the directory exists
     if not isdir(path):

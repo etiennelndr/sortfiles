@@ -5,8 +5,42 @@ try:
     from os import stat, listdir, makedirs, rename
     from time import asctime, localtime
     from sys import argv
+    from face_recognition import load_image_file, face_locations
+    import rawpy
+    from pathlib import Path
 except ImportError as err:
     exit(err)
+
+def areThereFaces(image):
+    """
+    Return true if there is at least one face on the image.
+    """
+    # Load the jpg file into a numpy array
+    if Path(image).suffix[1:] == "NEF":
+        raw = rawpy.imread(image)
+        img = raw.postprocess()
+    else:
+        img = load_image_file(image)
+
+    print(type(img))
+
+
+    # Find all the faces in the image using a pre-trained convolutional neural network.
+    # This method is more accurate than the default HOG model, but it's slower
+    # unless you have an nvidia GPU and dlib compiled with CUDA extensions. But if you do,
+    # this will use GPU acceleration and perform well.
+    # See also: find_faces_in_picture.py
+    face_locs = face_locations(img, number_of_times_to_upsample=0, model="cnn")
+
+    print("I found {} face(s) in this photograph.".format(len(face_locs)))
+
+    for face_location in face_locs:
+        # Print the location of each face in this image
+        top, right, bottom, left = face_location
+
+        print("A face is located at pixel location Top: {}, Left: {}, Bottom: {}, Right: {}".format(top, left, bottom, right))
+
+    return len(face_locs) > 0
 
 def retrieveCreationTimeOfFile(path, file):
     """
@@ -214,4 +248,11 @@ def main():
 
 if __name__== "__main__":
     # Start the program
-    main()
+    #main()
+    ret = areThereFaces("D:\Images\photo_profil.jpg")
+    print(ret)
+    ret = areThereFaces("D:\Images\Identité.jpg")
+    print(ret)
+    ret = areThereFaces("D:\Images\Photos\2019_(02)Fevrier\DSC_8529.NEF")
+    print(ret)
+    

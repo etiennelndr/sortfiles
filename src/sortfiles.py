@@ -11,9 +11,9 @@ try:
 except ImportError as err:
     exit(err)
 
-def areThereFaces(image):
+def areThereFaces(image, verbose=False):
     """
-    Return true if there is at least one face on the image.
+    Return true if there is at least one face in the image.
     """
     # Load the jpg file into a numpy array
     if Path(image).suffix[1:] == "NEF":
@@ -31,13 +31,14 @@ def areThereFaces(image):
     # See also: find_faces_in_picture.py
     face_locs = face_locations(img, number_of_times_to_upsample=0, model="cnn")
 
-    print("I found {} face(s) in this photograph.".format(len(face_locs)))
+    if verbose:
+        print("I found {} face(s) in this photograph.".format(len(face_locs)))
 
-    for face_location in face_locs:
-        # Print the location of each face in this image
-        top, right, bottom, left = face_location
+        for face_location in face_locs:
+            # Print the location of each face in this image
+            top, right, bottom, left = face_location
 
-        print("A face is located at pixel location Top: {}, Left: {}, Bottom: {}, Right: {}".format(top, left, bottom, right))
+            print("A face is located at pixel location Top: {}, Left: {}, Bottom: {}, Right: {}".format(top, left, bottom, right))
 
     return len(face_locs) > 0
 
@@ -109,10 +110,11 @@ def moveFilesToCorrectPath(path, alltime, filesToMove):
     for f in filesToMove:
         isAlreadyMoved = False
         for time in alltime:
-            if f.find(transformTimeToDate(time)) != -1:
+            if transformTimeToDate(time) in f:
                 isAlreadyMoved = True
                 break
-        # If a time pattern has not been found then we can move the file
+        # If a time pattern has not been found in the path of the file
+        # then we can move this one
         if not isAlreadyMoved:
             # Old path of the file
             oldpath = f
@@ -122,12 +124,6 @@ def moveFilesToCorrectPath(path, alltime, filesToMove):
             newpath = join(path, fileName)
             # Now move the file
             rename(oldpath, newpath)
-
-def show(path, allFiles, allCreationTime):
-    print("Files are from " + path)
-    print("")
-    for i in range (0,len(allFiles)):
-        print(allFiles[i] + " : " + allCreationTime[i])
 
 def switchMonth(month):
     """
@@ -235,9 +231,6 @@ def main():
 
     # Move files that are not directly in the path
     moveFilesToCorrectPath(path, alltime, filesToMove)
-
-    # Finally, show the results
-    #show(path, elements, alltime)
 
     # Create the directories
     createDirectories(path, alltime)

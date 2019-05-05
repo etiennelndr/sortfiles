@@ -24,7 +24,6 @@ def areThereFaces(image):
 
     print(type(img))
 
-
     # Find all the faces in the image using a pre-trained convolutional neural network.
     # This method is more accurate than the default HOG model, but it's slower
     # unless you have an nvidia GPU and dlib compiled with CUDA extensions. But if you do,

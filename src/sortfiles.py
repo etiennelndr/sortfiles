@@ -11,9 +11,10 @@ try:
 except ImportError as err:
     exit(err)
 
-def areThereFaces(image, verbose=False):
+
+def are_there_faces(image, verbose=False):
     """
-    Return true if there is at least one face in the image.
+    Returns true if there is at least one face in the image.
     """
     # Load the jpg file into a numpy array
     if Path(image).suffix[1:] == "NEF":
@@ -42,20 +43,22 @@ def areThereFaces(image, verbose=False):
 
     return len(face_locs) > 0
 
-def retrieveCreationTimeOfFile(path, file):
+
+def retrieve_creation_time_of_file(path, file):
     """
     A simple way to retrieve the creation time of a file.
     
     path : path in which the file is supposed to be\n
     file : the file for which we have to retrieve the creation time
     """
-    infos = stat(join(path, file))
-    timeOfFile = asctime(localtime(infos[ST_MTIME]))
-    return timeOfFile
+    info = stat(join(path, file))
+    time_of_file = asctime(localtime(info[ST_MTIME]))
+    return time_of_file
 
-def isDirectoryAutomaticallyCreated(dir):
+
+def is_directory_automatically_created(folder):
     """
-    Verify the name of the directory -> if it contains a month it returns True, otherwise False.
+    Verifies the name of the directory -> if it contains a month it returns True, otherwise False.
     """
     months = [
         '(01)Janvier',
@@ -71,102 +74,108 @@ def isDirectoryAutomaticallyCreated(dir):
         '(11)Novembre',
         '(12)Decembre'
     ]
-    return any(month in dir for month in months)
+    return any(month in folder for month in months)
 
-def retrieveAll(path, elements, alltime, filesToMove, isInDir):
+
+def retrieve_all_files(path, elements, alltime, files_to_move, is_in_dir):
     """
-    Retrieve recursively all of the files in a specific directory.
+    Retrieves recursively all of the files in a specific directory.
     It returns the files which are in a directory and that are going 
     to be moved.
 
-    path        : the path in which all the files and directories are\n
-    elements    : the files\n
-    allTime     : the time\n
-    filesToMove : potential files to move from a directory to the path
+    path          : the path in which all the files and directories are\n
+    elements      : the files\n
+    allTime       : the time\n
+    files_to_move : potential files to move from a directory to the path
     """
-    all = [f for f in listdir(path)]
-    for e in all:
+    all_files = [f for f in listdir(path)]
+    for e in all_files:
         if isdir(join(path, e)):
-            if not isDirectoryAutomaticallyCreated(e):
-                filesToMove = retrieveAll(path + e + "/", elements, alltime, filesToMove, True)
+            if not is_directory_automatically_created(e):
+                files_to_move = retrieve_all_files(path + e + "/", elements, alltime, files_to_move, True)
             else:
                 print("Can't move files which are in the directory '{}'.".format(e))
         elif isfile(join(path, e)):
-            if isInDir:
-                filesToMove.append(join(path, e))
+            if is_in_dir:
+                files_to_move.append(join(path, e))
             elements.append(e)
-            alltime.append(retrieveCreationTimeOfFile(path, e))
+            alltime.append(retrieve_creation_time_of_file(path, e))
     
-    return filesToMove
+    return files_to_move
 
-def moveFilesToCorrectPath(path, alltime, filesToMove):
-    """
-    Move files from their path to an other path.
 
-    path        : the path where all files will be after the execution\n
-    alltime     : needed to not process some files\n
-    filesToMove : files which are going to be moved
+def move_files_to_correct_path(path, alltime, files_to_move):
     """
-    for f in filesToMove:
-        isAlreadyMoved = False
+    Moves files from their path to an other path.
+
+    path          : the path where all files will be after the execution\n
+    alltime       : needed to not process some files\n
+    files_to_move : files which are going to be moved
+    """
+    for f in files_to_move:
+        is_already_moved = False
         for time in alltime:
-            if transformTimeToDate(time) in f:
-                isAlreadyMoved = True
+            if transform_time_to_date(time) in f:
+                is_already_moved = True
                 break
         # If a time pattern has not been found in the path of the file
         # then we can move this one
-        if not isAlreadyMoved:
+        if not is_already_moved:
             # Old path of the file
-            oldpath = f
+            old_path = f
             # Retrieve file name
-            splitFilePath = f.split("/")
-            fileName = splitFilePath[len(splitFilePath)-1]
-            newpath = join(path, fileName)
+            split_file_path = f.split("/")
+            file_name = split_file_path[len(split_file_path)-1]
+            new_path = join(path, file_name)
             # Now move the file
-            rename(oldpath, newpath)
+            rename(old_path, new_path)
 
-def switchMonth(month):
+
+def switch_month(month):
     """
-    Translate an english month to a french one. For example: 'Jan' becomes '(01)Janvier'.
+    Translates an english month to a french one. For example: 'Jan' becomes '(01)Janvier'.
 
     month : the month that will be translated
     """
     return {
-        'Jan' : '(01)Janvier',
-        'Feb' : '(02)Fevrier',
-        'Mar' : '(03)Mars',
-        'Apr' : '(04)Avril',
-        'May' : '(05)Mai',
-        'Jun' : '(06)Juin',
-        'Jul' : '(07)Juillet',
-        'Aug' : '(08)Aout',
-        'Sep' : '(09)Septembre',
-        'Oct' : '(10)Octobre',
-        'Nov' : '(11)Novembre',
-        'Dec' : '(12)Decembre',
+        'Jan': '(01)Janvier',
+        'Feb': '(02)Fevrier',
+        'Mar': '(03)Mars',
+        'Apr': '(04)Avril',
+        'May': '(05)Mai',
+        'Jun': '(06)Juin',
+        'Jul': '(07)Juillet',
+        'Aug': '(08)Aout',
+        'Sep': '(09)Septembre',
+        'Oct': '(10)Octobre',
+        'Nov': '(11)Novembre',
+        'Dec': '(12)Decembre',
     }[month]
 
-def transformToPath(path, date):
+
+def transform_to_path(path, date):
     """
-    Concatenate the path and the date to create an absolute path.
+    Concatenates the path and the date to create an absolute path.
     
     path : absolute path\n
     date : date (format: Month-Year)
     """
     return join(path, date + "/")
 
-def transformTimeToDate(time):
+
+def transform_time_to_date(time):
     """
-    Concatenate the month and the year.
+    Concatenates the month and the year.
     
     time : the time to transform
     """
-    splittime = time.split()
-    return  splittime[4] + "_" + switchMonth(splittime[1]) # [4]=year and [1]=month
-    
-def createDirectories(path, alltime):
+    split_time = time.split()
+    return split_time[4] + "_" + switch_month(split_time[1])  # [4]=year and [1]=month
+
+
+def create_directories(path, alltime):
     """
-    Create new directories thanks to the date of creation of some files.
+    Creates new directories thanks to the date of creation of some files.
     
     path        : absolute path of the directories\n
     alltime     : these times will be used to create directories
@@ -174,18 +183,19 @@ def createDirectories(path, alltime):
     directories = list()
     for time in alltime:
         # Concatenate the month and the year
-        date = transformTimeToDate(time)
+        date = transform_time_to_date(time)
         # If this date is not in the directories, add it
         if date not in directories:
             directories.append(date)
             # Concatenate the path and the date to create an absolute path
-            path_of_dir = transformToPath(path, date)
+            path_of_dir = transform_to_path(path, date)
             new_directory = dirname(path_of_dir)
             # We need to create a directory if it doesn't exist
             if not exists(new_directory):
                 makedirs(new_directory)
 
-def moveFiles(path, elements, alltime):
+
+def move_files(path, elements, alltime):
     """
     Move a file from an old path to a new one.
     
@@ -194,9 +204,9 @@ def moveFiles(path, elements, alltime):
     alltime  : we use the time to create the new path of the file
     """
     for i in range(0, len(elements)):
-        date = transformTimeToDate(alltime[i])
+        date = transform_time_to_date(alltime[i])
         # Create the new path
-        newpath = transformToPath(path, date)
+        newpath = transform_to_path(path, date)
         # Add the name of the element to the new path
         newpath += elements[i]
         # We need the old file path to move it
@@ -206,6 +216,7 @@ def moveFiles(path, elements, alltime):
             rename(oldpath, newpath)
         else:
             print(newpath + " already exists.")
+
 
 def main():
     """
@@ -224,27 +235,21 @@ def main():
     # Create a variable for all the elements
     elements = list()
     # Create a variable for all the time
-    alltime = list()
+    all_time = list()
 
     # Retrieve all the files from a path
-    filesToMove = retrieveAll(path, elements, alltime, [], False)
+    files_to_move = retrieve_all_files(path, elements, all_time, [], False)
 
     # Move files that are not directly in the path
-    moveFilesToCorrectPath(path, alltime, filesToMove)
+    move_files_to_correct_path(path, all_time, files_to_move)
 
     # Create the directories
-    createDirectories(path, alltime)
+    create_directories(path, all_time)
 
     # Now, move the files
-    moveFiles(path, elements, alltime)
+    move_files(path, elements, all_time)
 
-if __name__== "__main__":
+
+if __name__ == "__main__":
     # Start the program
-    #main()
-    ret = areThereFaces("D:\Images\photo_profil.jpg")
-    print(ret)
-    ret = areThereFaces("D:\Images\Identité.jpg")
-    print(ret)
-    ret = areThereFaces("D:\Images\Photos\2019_(02)Fevrier\DSC_8529.NEF")
-    print(ret)
-    
+    main()

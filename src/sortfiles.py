@@ -5,7 +5,7 @@ try:
     from os import stat, listdir, makedirs, rename
     from time import asctime, localtime
     from sys import argv
-    from face_recognition import load_image_file, face_locations
+    # from face_recognition import load_image_file, face_locations
     import rawpy
     from pathlib import Path
 except ImportError as err:
@@ -216,40 +216,3 @@ def move_files(path, elements, alltime):
             rename(oldpath, newpath)
         else:
             print(newpath + " already exists.")
-
-
-def main():
-    """
-    Main method.
-    """
-    if len(argv[1:]) == 0:
-        exit("Error: you must start the program this way -> python sortfiles.py [path]")
-
-    # Create the path
-    path = argv[1]
-
-    # Verify if the directory exists
-    if not isdir(path):
-        exit("Error: this directory doesn't exist. Please create it or verify if you haven't made a mistake in the path.")
-
-    # Create a variable for all the elements
-    elements = list()
-    # Create a variable for all the time
-    all_time = list()
-
-    # Retrieve all the files from a path
-    files_to_move = retrieve_all_files(path, elements, all_time, [], False)
-
-    # Move files that are not directly in the path
-    move_files_to_correct_path(path, all_time, files_to_move)
-
-    # Create the directories
-    create_directories(path, all_time)
-
-    # Now, move the files
-    move_files(path, elements, all_time)
-
-
-if __name__ == "__main__":
-    # Start the program
-    main()

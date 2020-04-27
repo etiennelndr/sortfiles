@@ -1,18 +1,16 @@
-#!/usr/bin/python
-try:
-    from os.path import isfile, join, isdir, exists, dirname
-    from stat import ST_MTIME
-    from os import stat, listdir, makedirs, rename
-    from time import asctime, localtime
-    from sys import argv
-    # from face_recognition import load_image_file, face_locations
-    import rawpy
-    from pathlib import Path
-except ImportError as err:
-    exit(err)
+from os import listdir, makedirs, rename, stat
+from os.path import dirname, exists, isdir, isfile, join
+from pathlib import Path
+from stat import ST_MTIME
+from sys import argv
+from time import asctime, localtime
+
+import rawpy
+
+# from face_recognition import load_image_file, face_locations
 
 
-def are_there_faces(image, verbose=False):
+def are_there_faces(image: str, verbose=False):
     """
     Returns true if there is at least one face in the image.
     """
@@ -39,12 +37,16 @@ def are_there_faces(image, verbose=False):
             # Print the location of each face in this image
             top, right, bottom, left = face_location
 
-            print("A face is located at pixel location Top: {}, Left: {}, Bottom: {}, Right: {}".format(top, left, bottom, right))
+            print(
+                "A face is located at pixel location Top: {}, Left: {}, Bottom: {}, Right: {}".format(
+                    top, left, bottom, right
+                )
+            )
 
     return len(face_locs) > 0
 
 
-def retrieve_creation_time_of_file(path, file):
+def retrieve_creation_time_of_file(path: str, file: str):
     """
     A simple way to retrieve the creation time of a file.
     
@@ -56,28 +58,28 @@ def retrieve_creation_time_of_file(path, file):
     return time_of_file
 
 
-def is_directory_automatically_created(folder):
+def is_directory_automatically_created(folder: str):
     """
     Verifies the name of the directory -> if it contains a month it returns True, otherwise False.
     """
     months = [
-        '(01)Janvier',
-        '(02)Fevrier',
-        '(03)Mars',
-        '(04)Avril',
-        '(05)Mai',
-        '(06)Juin',
-        '(07)Juillet',
-        '(08)Aout',
-        '(09)Septembre',
-        '(10)Octobre',
-        '(11)Novembre',
-        '(12)Decembre'
+        "(01)Janvier",
+        "(02)Fevrier",
+        "(03)Mars",
+        "(04)Avril",
+        "(05)Mai",
+        "(06)Juin",
+        "(07)Juillet",
+        "(08)Aout",
+        "(09)Septembre",
+        "(10)Octobre",
+        "(11)Novembre",
+        "(12)Decembre",
     ]
     return any(month in folder for month in months)
 
 
-def retrieve_all_files(path, elements, alltime, files_to_move, is_in_dir):
+def retrieve_all_files(path: str, elements, alltime, files_to_move, is_in_dir: bool):
     """
     Retrieves recursively all of the files in a specific directory.
     It returns the files which are in a directory and that are going 
@@ -92,19 +94,25 @@ def retrieve_all_files(path, elements, alltime, files_to_move, is_in_dir):
     for e in all_files:
         if isdir(join(path, e)):
             if not is_directory_automatically_created(e):
-                files_to_move = retrieve_all_files(path + e + "/", elements, alltime, files_to_move, True)
+                files_to_move = retrieve_all_files(
+                    path + e + "/", elements, alltime, files_to_move, True
+                )
             else:
-                print("Can't move files which are in the directory '{}'.".format(e))
+                print(
+                    "Can't move files which are in the directory '{}'.".format(
+                        e
+                    )
+                )
         elif isfile(join(path, e)):
             if is_in_dir:
                 files_to_move.append(join(path, e))
             elements.append(e)
             alltime.append(retrieve_creation_time_of_file(path, e))
-    
+
     return files_to_move
 
 
-def move_files_to_correct_path(path, alltime, files_to_move):
+def move_files_to_correct_path(path: str, alltime, files_to_move):
     """
     Moves files from their path to an other path.
 
@@ -125,35 +133,35 @@ def move_files_to_correct_path(path, alltime, files_to_move):
             old_path = f
             # Retrieve file name
             split_file_path = f.split("/")
-            file_name = split_file_path[len(split_file_path)-1]
+            file_name = split_file_path[len(split_file_path) - 1]
             new_path = join(path, file_name)
             # Now move the file
             rename(old_path, new_path)
 
 
-def switch_month(month):
+def switch_month(month: str):
     """
     Translates an english month to a french one. For example: 'Jan' becomes '(01)Janvier'.
 
     month : the month that will be translated
     """
     return {
-        'Jan': '(01)Janvier',
-        'Feb': '(02)Fevrier',
-        'Mar': '(03)Mars',
-        'Apr': '(04)Avril',
-        'May': '(05)Mai',
-        'Jun': '(06)Juin',
-        'Jul': '(07)Juillet',
-        'Aug': '(08)Aout',
-        'Sep': '(09)Septembre',
-        'Oct': '(10)Octobre',
-        'Nov': '(11)Novembre',
-        'Dec': '(12)Decembre',
+        "Jan": "(01)Janvier",
+        "Feb": "(02)Fevrier",
+        "Mar": "(03)Mars",
+        "Apr": "(04)Avril",
+        "May": "(05)Mai",
+        "Jun": "(06)Juin",
+        "Jul": "(07)Juillet",
+        "Aug": "(08)Aout",
+        "Sep": "(09)Septembre",
+        "Oct": "(10)Octobre",
+        "Nov": "(11)Novembre",
+        "Dec": "(12)Decembre",
     }[month]
 
 
-def transform_to_path(path, date):
+def transform_to_path(path: str, date: str):
     """
     Concatenates the path and the date to create an absolute path.
     
@@ -163,17 +171,19 @@ def transform_to_path(path, date):
     return join(path, date + "/")
 
 
-def transform_time_to_date(time):
+def transform_time_to_date(time: str):
     """
     Concatenates the month and the year.
     
     time : the time to transform
     """
     split_time = time.split()
-    return split_time[4] + "_" + switch_month(split_time[1])  # [4]=year and [1]=month
+    return (
+        split_time[4] + "_" + switch_month(split_time[1])
+    )  # [4]=year and [1]=month
 
 
-def create_directories(path, alltime):
+def create_directories(path: str, alltime):
     """
     Creates new directories thanks to the date of creation of some files.
     
@@ -195,7 +205,7 @@ def create_directories(path, alltime):
                 makedirs(new_directory)
 
 
-def move_files(path, elements, alltime):
+def move_files(path: str, elements, alltime):
     """
     Move a file from an old path to a new one.
     

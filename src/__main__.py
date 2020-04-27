@@ -3,7 +3,12 @@ import pathlib
 
 import click
 
-from .sortfiles import retrieve_all_files, move_files_to_correct_path, create_directories, move_files
+from .sortfiles import (
+    create_directories,
+    move_files,
+    move_files_to_correct_path,
+    retrieve_all_files,
+)
 
 
 @click.group()
@@ -15,10 +20,12 @@ def main():
 
 @main.command()
 @click.option("--folder", "-f", "folder", required=True)
-def run(folder):
+def run(folder: str):
     if not os.path.isdir(folder):
-        exit("Error: this directory doesn't exist. Please create it or verify "
-             "if you haven't made a mistake in the path.")
+        exit(
+            "Error: this directory doesn't exist. Please create it or verify "
+            "if you haven't made a mistake in the path."
+        )
 
     elements = list()
     all_time = list()

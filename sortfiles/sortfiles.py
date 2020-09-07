@@ -2,7 +2,6 @@ from os import listdir, makedirs, rename, stat
 from os.path import dirname, exists, isdir, isfile, join
 from pathlib import Path
 from stat import ST_MTIME
-from sys import argv
 from time import asctime, localtime
 
 import rawpy
@@ -95,14 +94,10 @@ def retrieve_all_files(path: str, elements, alltime, files_to_move, is_in_dir: b
         if isdir(join(path, e)):
             if not is_directory_automatically_created(e):
                 files_to_move = retrieve_all_files(
-                    path + e + "/", elements, alltime, files_to_move, True
+                    join(path, e) + "/", elements, alltime, files_to_move, True
                 )
             else:
-                print(
-                    "Can't move files which are in the directory '{}'.".format(
-                        e
-                    )
-                )
+                print("Can't move files which are in the directory '{}'.".format(e))
         elif isfile(join(path, e)):
             if is_in_dir:
                 files_to_move.append(join(path, e))
@@ -178,9 +173,7 @@ def transform_time_to_date(time: str):
     time : the time to transform
     """
     split_time = time.split()
-    return (
-        split_time[4] + "_" + switch_month(split_time[1])
-    )  # [4]=year and [1]=month
+    return split_time[4] + "_" + switch_month(split_time[1])  # [4]=year and [1]=month
 
 
 def create_directories(path: str, alltime):

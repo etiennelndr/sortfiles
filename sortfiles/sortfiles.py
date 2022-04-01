@@ -1,48 +1,9 @@
 from os import listdir, makedirs, rename, stat
 from os.path import dirname, exists, isdir, isfile, join
-from pathlib import Path
 from stat import ST_MTIME
 from time import asctime, localtime
 
-import rawpy
-
-# from face_recognition import load_image_file, face_locations
-
-
-def are_there_faces(image: str, verbose=False):
-    """
-    Returns true if there is at least one face in the image.
-    """
-    # Load the jpg file into a numpy array
-    if Path(image).suffix[1:] == "NEF":
-        raw = rawpy.imread(image)
-        img = raw.postprocess()
-    else:
-        img = load_image_file(image)
-
-    print(type(img))
-
-    # Find all the faces in the image using a pre-trained convolutional neural network.
-    # This method is more accurate than the default HOG model, but it's slower
-    # unless you have an nvidia GPU and dlib compiled with CUDA extensions. But if you do,
-    # this will use GPU acceleration and perform well.
-    # See also: find_faces_in_picture.py
-    face_locs = face_locations(img, number_of_times_to_upsample=0, model="cnn")
-
-    if verbose:
-        print("I found {} face(s) in this photograph.".format(len(face_locs)))
-
-        for face_location in face_locs:
-            # Print the location of each face in this image
-            top, right, bottom, left = face_location
-
-            print(
-                "A face is located at pixel location Top: {}, Left: {}, Bottom: {}, Right: {}".format(
-                    top, left, bottom, right
-                )
-            )
-
-    return len(face_locs) > 0
+from loguru import logger
 
 
 def retrieve_creation_time_of_file(path: str, file: str):
@@ -97,7 +58,7 @@ def retrieve_all_files(path: str, elements, alltime, files_to_move, is_in_dir: b
                     join(path, e) + "/", elements, alltime, files_to_move, True
                 )
             else:
-                print("Can't move files which are in the directory '{}'.".format(e))
+                logger.info("Can't move files which are in the directory '{}'.".format(e))
         elif isfile(join(path, e)):
             if is_in_dir:
                 files_to_move.append(join(path, e))
@@ -216,6 +177,7 @@ def move_files(path: str, elements, alltime):
         oldpath = join(path, elements[i])
         # Move file
         if not isfile(newpath):
+            logger.debug(f"Moving file '{oldpath}' to '{newpath}'")
             rename(oldpath, newpath)
         else:
-            print(newpath + " already exists.")
+            logger.debug(newpath + " already exists.")

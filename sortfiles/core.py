@@ -41,7 +41,7 @@ def is_directory_automatically_created(folder: str):
 
 def retrieve_all_files(path: str, elements, alltime, files_to_move, is_in_dir: bool):
     """
-    Retrieves recursively all of the files in a specific directory.
+    Retrieves recursively all the files in a specific directory.
     It returns the files which are in a directory and that are going 
     to be moved.
 
@@ -70,7 +70,7 @@ def retrieve_all_files(path: str, elements, alltime, files_to_move, is_in_dir: b
 
 def move_files_to_correct_path(path: str, alltime, files_to_move):
     """
-    Moves files from their path to an other path.
+    Moves files from their path to another path.
 
     path          : the path where all files will be after the execution\n
     alltime       : needed to not process some files\n

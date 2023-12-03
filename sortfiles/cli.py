@@ -1,35 +1,44 @@
-import os.path
+import sys
+from pathlib import Path
+from typing import Sequence
 
-import typer
+from loguru import logger
+import click
 
-from .core import (
-    create_directories,
-    move_files,
-    move_files_to_correct_path,
-    retrieve_all_files,
-)
+from . import core
 
 
-def run():
-    cli_app = typer.Typer(name="sortfiles", no_args_is_help=True)
-    cli_app.command(name="run", no_args_is_help=True)(_main)
-    cli_app()
+@click.command()
+@click.argument("folder", type=click.Path(exists=True, file_okay=False, path_type=Path))
+@click.option("--clean", "-c", type=bool, default=False)
+def main(folder: Path, clean: bool):
+    if not folder.is_dir():
+        raise NotADirectoryError(f"Unable to sort files in unknown or invalid folder '{folder}'")
+
+    logger.info(f"Sorting files in folder '{folder}'")
+    logger.info(f"Scanning input folder to extract dates and files")
+    scan_result = core.scan(folder)
+    if not scan_result:
+        logger.info(f"Nothing to move, finishing")
+        return
+
+    logger.info(f"Creating new structure before moving files")
+    core.create_structure(folder, scan_result)
+    logger.info(f"Moving files in new structure")
+    core.move_files(folder, scan_result)
+
+    if clean:
+        logger.info("Cleaning old subfolders")
+        core.clean(folder, scan_result)
 
 
-def _main(folder: str):
-    if not os.path.isdir(folder):
-        exit(
-            "Error: this directory doesn't exist. Please create it or verify "
-            "if you haven't made a mistake in the path."
-        )
+def run(argv: Sequence[str] | None = None) -> None:
+    """Runs application CLI."""
+    if argv is None:
+        # Exclude program name from the list of CLI arguments
+        argv = sys.argv[1:]
 
-    elements = list()
-    all_time = list()
-
-    files_to_move = retrieve_all_files(folder, elements, all_time, [], False)
-    move_files_to_correct_path(folder, all_time, files_to_move)
-    create_directories(folder, all_time)
-    move_files(folder, elements, all_time)
+    main.main(args=argv)
 
 
 __all__ = ["run"]

@@ -10,15 +10,15 @@ authors = ["Etienne Landuré <25793763+etiennelndr@users.noreply.github.com>"]
 readme = "README.md"
 
 [tool.poetry.dependencies]
-python = "~3.9"
-loguru = "0.6.0"
-typer = "0.7.0"
+python = "~3.12"
+loguru = "0.7.2"
+click = "8.1.7"
 
 [tool.poetry.group.dev.dependencies]
-black = "22.12.0"
-isort = "5.11.4"
-autoflake = "2.0.0"
-pre-commit = "2.21.0"
+black = "23.10.1"
+isort = "5.12.0"
+autoflake = "2.2.1"
+pre-commit = "3.5.0"
 
 [tool.poetry.scripts]
 sortfiles = "sortfiles.__main__:main"

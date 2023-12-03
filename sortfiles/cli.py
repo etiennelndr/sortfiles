@@ -2,8 +2,8 @@ import sys
 from pathlib import Path
 from typing import Sequence
 
-from loguru import logger
 import click
+from loguru import logger
 
 from . import core
 

@@ -2,7 +2,7 @@ import re
 import shutil
 from datetime import date
 from pathlib import Path
-from typing import Mapping, Sequence, MutableMapping, MutableSequence
+from typing import Mapping, MutableMapping, MutableSequence, Sequence
 
 from loguru import logger
 

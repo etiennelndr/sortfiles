@@ -16,7 +16,7 @@ click = "8.1.7"
 tqdm = "4.66.2"
 
 [tool.poetry.group.dev.dependencies]
-black = "23.10.1"
+black = "24.3.0"
 isort = "5.12.0"
 autoflake = "2.2.1"
 pre-commit = "3.5.0"

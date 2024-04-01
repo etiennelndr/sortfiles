@@ -5,6 +5,7 @@ from pathlib import Path
 from typing import Mapping, MutableMapping, MutableSequence, Sequence
 
 from loguru import logger
+from tqdm import tqdm
 
 
 def _retrieve_creation_date(fs_element: Path) -> date:
@@ -85,23 +86,31 @@ def create_structure(folder: Path, scan_result: ScanResult) -> None:
         scan_date_folder.mkdir(parents=True, exist_ok=True)
 
 
+def _compute_scan_result_size(scan_result: ScanResult) -> int:
+    return sum(len(p) for p in scan_result.values())
+
+
 def move_files(folder: Path, scan_result: ScanResult) -> None:
     """Moves files of a scan.
 
     Structure must be created before running this function. If not, an error is raised.
     """
-    for scan_date, scan_elements in scan_result.items():
-        scan_date_folder = folder / str(scan_date.year) / str(scan_date.month).zfill(2)
-        if not scan_date_folder.exists():
-            raise OSError("Date folder does not exist")
+    with tqdm(
+        desc=f"Moving files in {folder}", total=_compute_scan_result_size(scan_result)
+    ) as pbar:
+        for scan_date, scan_elements in scan_result.items():
+            scan_date_folder = folder / str(scan_date.year) / str(scan_date.month).zfill(2)
+            if not scan_date_folder.exists():
+                raise OSError("Date folder does not exist")
 
-        for element_path in scan_elements:
-            old_element_path = folder / element_path
-            new_element_path = scan_date_folder / element_path
-            new_element_path.parent.mkdir(parents=True, exist_ok=True)
-            new_element_path.touch()
-            logger.debug(f"Moving file '{old_element_path}' to '{new_element_path}'")
-            shutil.move(old_element_path, new_element_path)
+            for element_path in scan_elements:
+                old_element_path = folder / element_path
+                new_element_path = scan_date_folder / element_path
+                new_element_path.parent.mkdir(parents=True, exist_ok=True)
+                new_element_path.touch()
+                shutil.move(old_element_path, new_element_path)
+                # Update progress after moving the file
+                pbar.update(1)
 
 
 def clean(folder: Path, scan_result: ScanResult) -> None:

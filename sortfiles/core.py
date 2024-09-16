@@ -111,7 +111,7 @@ def move_files(folder: Path, scan_result: ScanResult) -> None:
                     old_element_path.rename(new_element_path)
                 except FileExistsError:
                     old_element_path.unlink()
-                # Update progress after moving the file
+                # Update the progress after moving the file
                 pbar.update(1)
 
 

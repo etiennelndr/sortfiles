@@ -107,8 +107,10 @@ def move_files(folder: Path, scan_result: ScanResult) -> None:
                 old_element_path = folder / element_path
                 new_element_path = scan_date_folder / element_path
                 new_element_path.parent.mkdir(parents=True, exist_ok=True)
-                new_element_path.touch()
-                shutil.move(old_element_path, new_element_path)
+                try:
+                    old_element_path.rename(new_element_path)
+                except FileExistsError:
+                    old_element_path.unlink()
                 # Update progress after moving the file
                 pbar.update(1)
 

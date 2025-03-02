@@ -19,7 +19,7 @@ def main(folder: Path, clean: bool):
     logger.info(f"Scanning input folder to extract dates and files")
     scan_result = core.scan(folder)
     if not scan_result:
-        logger.info(f"Scan result is empty, no further operations are required")
+        logger.warning(f"Scan result is empty, no further operations are required")
         return
 
     logger.info(f"Creating new structure before moving files")
@@ -31,7 +31,9 @@ def main(folder: Path, clean: bool):
         logger.info("Cleaning old subfolders")
         core.clean(folder, scan_result)
     else:
-        logger.info("Cleaning of old subfolders is disabled and should be carried out by you")
+        logger.warning("Cleaning of old subfolders is disabled and should be carried out by you")
+
+    logger.success("File sorting successfully completed")
 
 
 def run(argv: Sequence[str] | None = None) -> None:

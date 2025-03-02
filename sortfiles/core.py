@@ -1,5 +1,4 @@
 import re
-import shutil
 from datetime import date
 from pathlib import Path
 from typing import Mapping, MutableMapping, MutableSequence, Sequence
@@ -107,10 +106,13 @@ def move_files(folder: Path, scan_result: ScanResult) -> None:
                 old_element_path = folder / element_path
                 new_element_path = scan_date_folder / element_path
                 new_element_path.parent.mkdir(parents=True, exist_ok=True)
-                new_element_path.touch()
-                shutil.move(old_element_path, new_element_path)
-                # Update progress after moving the file
-                pbar.update(1)
+                try:
+                    old_element_path.rename(new_element_path)
+                except FileExistsError:
+                    old_element_path.unlink()
+
+                # Update the progress after moving the file
+                pbar.update()
 
 
 def clean(folder: Path, scan_result: ScanResult) -> None:

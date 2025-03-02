@@ -41,7 +41,7 @@ def _sortable(path: Path) -> bool:
         raise ValueError("Unable to check whether an absolute file path is sortable or not")
 
     path_elements = path.parts
-    if len(path_elements) < 3:
+    if len(path_elements) < 3:  # noqa: PLR2004
         return True
 
     return (
@@ -65,7 +65,7 @@ def scan(folder: Path) -> ScanResult:
 
         element_date = _retrieve_creation_date(element)
         element_date = date(element_date.year, element_date.month, 1)
-        element = element.relative_to(folder)
+        element = element.relative_to(folder)  # noqa: PLW2901
 
         if not _sortable(element):
             logger.debug(f"Ignoring unsortable file '{element}'")

@@ -1,24 +1,31 @@
 repos:
   - repo: local
     hooks:
-      - id: autoflake
-        name: autoflake
-        stages: [commit]
-        language: system
-        types: [python]
-        entry: autoflake
-        args: [--in-place, --recursive, --remove-unused-variables, --remove-all-unused-imports]
+      # Code formatting
+      - id: ruff-check
+        name: Ruff Check
+        stages:
+          - pre-commit
+        language: python
+        entry: ruff check --fix
+        types:
+          - python
+      - id: ruff-format
+        name: Ruff Format
+        stages:
+          - pre-commit
+        language: python
+        entry: ruff format
+        types:
+          - python
 
-      - id: isort
-        name: isort
-        stages: [commit]
-        language: system
-        types: [python]
-        entry: isort
-
-      - id: black
-        name: black
-        stages: [commit]
-        language: system
-        types: [python]
-        entry: black
+      # Code analysis
+      - id: mypy
+        name: MyPy
+        stages:
+          - pre-commit
+        language: python
+        entry: mypy
+        types:
+          - python
+        pass_filenames: false

@@ -1,23 +1,131 @@
+import mimetypes
 import re
-from datetime import date
+from dataclasses import dataclass
+from datetime import date, datetime
+from enum import Enum
 from pathlib import Path
-from typing import Mapping, MutableMapping, MutableSequence, Sequence
+from typing import Mapping, MutableMapping, Sequence
 
+from exifread import process_file
 from loguru import logger
 from tqdm import tqdm
 
+mimetypes.init()
 
-def _retrieve_creation_date(fs_element: Path) -> date:
-    """Retrieves the creation date of a filesystem element (file or folder).
 
-    :param fs_element: element path.
+class FileType(Enum):
+    """An enumeration of supported file types."""
+
+    @classmethod
+    def all(cls) -> set[str]:
+        """Returns all file types."""
+        return {ft.value for ft in cls}
+
+
+class ImageType(FileType):
+    """An enumeration of supported image types."""
+
+    HEIC = "heic"
+    JPG = "jpg"
+    JPEG = "jpeg"
+    PNG = "png"
+    RAW = "raw"
+
+
+class VideoType(FileType):
+    """An enumeration of supported video types."""
+
+    MOV = "quicktime"
+    MP4 = "mp4"
+
+
+@dataclass
+class FileInfo:
+    """File information."""
+
+    path: Path
+    type: FileType
+    creation_date: date
+
+
+def get_file_information(file_path: Path) -> FileInfo | None:
+    """Retrieves file information."""
+    file_type = get_file_type(file_path)
+    if file_type is None:
+        return None
+
+    file_creation_date = retrieve_file_creation_date(file_path, file_type)
+
+    return FileInfo(
+        path=file_path,
+        type=file_type,
+        creation_date=file_creation_date,
+    )
+
+
+def get_file_type(file_path: Path) -> FileType | None:
+    """Retrieves file type."""
+    if not file_path.is_file():
+        return None
+
+    file_mimetype, _ = mimetypes.guess_type(file_path)
+    if file_mimetype is None:
+        return file_mimetype
+
+    file_class, file_type = file_mimetype.split("/", maxsplit=1)
+    try:
+        match file_class:
+            case "image":
+                return ImageType(file_type)
+            case "video":
+                return VideoType(file_type)
+            case _:
+                return None
+    except ValueError:
+        return None
+
+
+def retrieve_file_creation_date(file_path: Path, file_type: FileType) -> date:
+    """Retrieves the creation date of a file.
+
+    :param file_path: file path.
+    :param file_type: file type that is used to improve the process in some cases.
     """
-    if not fs_element.is_file() and not fs_element.is_dir():
-        # This is an internal error, everyone is allowed to blame me
-        raise ValueError("Creation date can only be retrieved from a file or folder")
+    match file_type:
+        case ImageType.JPG | ImageType.JPEG | ImageType.PNG | ImageType.HEIC | ImageType.RAW:
+            file_creation_date = _retrieve_creation_date_exif(file_path)
+            if file_creation_date is None:
+                file_creation_date = _retrieve_creation_date_dummy(file_path)
+            return file_creation_date
+        case VideoType.MOV | VideoType.MP4:
+            return _retrieve_creation_date_dummy(file_path)
+        case _:
+            raise NotImplementedError(
+                f"Unable to retrieve creation date for file of type ' {file_type.value}'"
+            )
 
-    info = fs_element.stat()
-    return date.fromtimestamp(info.st_mtime)
+
+def _retrieve_creation_date_exif(file_path: Path) -> date | None:
+    with file_path.open("rb") as file_path_stream:
+        file_img_exif = process_file(file_path_stream)
+
+    try:
+        file_creation_date = file_img_exif["Image DateTime"].values
+    except KeyError:
+        return None
+
+    for file_creation_date_format in ("%Y:%m:%d %H:%M:%S", "%Y/%m/%d %H:%M"):
+        try:
+            return datetime.strptime(file_creation_date, file_creation_date_format).date()
+        except ValueError:
+            pass
+
+    raise ValueError(f"Unable to extract creation date from EXIF for file '{file_path}'")
+
+
+def _retrieve_creation_date_dummy(file_path: Path) -> date:
+    info = file_path.stat()
+    return date.fromtimestamp(info.st_birthtime)
 
 
 _YEAR_PATTERN: re.Pattern = re.compile(r"^[1-2][0-9]{3}$")
@@ -28,7 +136,7 @@ Only years in the range [1000;2999] are valid.
 _MONTH_PATTERN: re.Pattern = re.compile(r"^(0[1-9])|(1[1-2])$")
 
 
-def _sortable(path: Path) -> bool:
+def is_valid(path: Path) -> bool:
     """Checks whether a path is sortable or not.
 
     A path is sortable iff:
@@ -36,17 +144,13 @@ def _sortable(path: Path) -> bool:
     * first path element is not a folder whose name is a valid year number;
     * second path element is not a folder whose name is a valid month number.
     """
-    if path.is_absolute():
-        # This is (also) an internal error, everyone is allowed to blame me
-        raise ValueError("Unable to check whether an absolute file path is sortable or not")
-
-    path_elements = path.parts
-    if len(path_elements) < 3:  # noqa: PLR2004
+    file_path_elements = path.parts
+    if len(file_path_elements) < 2:  # noqa: PLR2004
         return True
 
     return (
-        _YEAR_PATTERN.fullmatch(path_elements[0]) is None
-        and _MONTH_PATTERN.fullmatch(path_elements[1]) is None
+        _YEAR_PATTERN.fullmatch(file_path_elements[0]) is None
+        and _MONTH_PATTERN.fullmatch(file_path_elements[1]) is None
     )
 
 
@@ -58,21 +162,21 @@ def scan(folder: Path) -> ScanResult:
 
     Files are grouped by date.
     """
-    result: MutableMapping[date, MutableSequence[Path]] = {}
-    for element in folder.rglob("*"):
-        if not element.is_file():
+    result: MutableMapping[date, list[Path]] = {}
+    for element_path in folder.rglob("*"):
+        file_path = element_path.relative_to(folder)
+        if not element_path.is_file() or not is_valid(file_path):
+            logger.debug(f"Ignoring unsortable file '{element_path}'")
             continue
 
-        element_date = _retrieve_creation_date(element)
-        element_date = date(element_date.year, element_date.month, 1)
-        element = element.relative_to(folder)  # noqa: PLW2901
+        file_info = get_file_information(element_path)
+        if file_info is None:
+            raise ValueError(f"Unable to get file information for '{element_path}'")
 
-        if not _sortable(element):
-            logger.debug(f"Ignoring unsortable file '{element}'")
-            continue
+        file_creation_date = file_info.creation_date.replace(day=1)
 
-        date_elements = result.setdefault(element_date, [])
-        date_elements.append(element)
+        date_elements = result.setdefault(file_creation_date, [])
+        date_elements.append(file_path)
 
     return result
 
@@ -100,7 +204,7 @@ def move_files(folder: Path, scan_result: ScanResult) -> None:
         for scan_date, scan_elements in scan_result.items():
             scan_date_folder = folder / str(scan_date.year) / str(scan_date.month).zfill(2)
             if not scan_date_folder.exists():
-                raise OSError("Date folder does not exist")
+                raise OSError(f"Date folder '{scan_date_folder}' does not exist")
 
             for element_path in scan_elements:
                 old_element_path = folder / element_path
@@ -118,7 +222,7 @@ def move_files(folder: Path, scan_result: ScanResult) -> None:
 def clean(folder: Path, scan_result: ScanResult) -> None:
     """Cleans empty folders.
 
-    This function can be run after moving files. If ran before, OS errors should be expected.
+    This function must be run after moving files. If ran before, OS errors should be expected.
     """
     for scan_elements in scan_result.values():
         for element_path in scan_elements:

@@ -48,14 +48,25 @@ files = [
 ]
 
 [[package]]
+name = "exifread"
+version = "2.3.2"
+description = "Read Exif metadata from tiff and jpeg files."
+optional = false
+python-versions = "*"
+files = [
+    {file = "ExifRead-2.3.2-py3-none-any.whl", hash = "sha256:3ef8725efdb66530b4b3cd1c4ba5d3f3b35a7872137d2c707f711971f8ebf809"},
+    {file = "ExifRead-2.3.2.tar.gz", hash = "sha256:a0f74af5040168d3883bbc980efe26d06c89f026dc86ba28eb34107662d51766"},
+]
+
+[[package]]
 name = "filelock"
-version = "3.17.0"
+version = "3.18.0"
 description = "A platform independent file lock."
 optional = false
 python-versions = ">=3.9"
 files = [
-    {file = "filelock-3.17.0-py3-none-any.whl", hash = "sha256:533dc2f7ba78dc2f0f531fc6c4940addf7b70a481e269a5a3b93be94ffbe8338"},
-    {file = "filelock-3.17.0.tar.gz", hash = "sha256:ee4e77401ef576ebb38cd7f13b9b28893194acc20a8e68e18730ba9c0e54660e"},
+    {file = "filelock-3.18.0-py3-none-any.whl", hash = "sha256:c401f4f8377c4464e6db25fff06205fd89bdd83b65eb0488ed1b160f780e21de"},
+    {file = "filelock-3.18.0.tar.gz", hash = "sha256:adbc88eabb99d2fec8c9c1b229b171f18afa655400173ddc653d5d01501fb9f2"},
 ]
 
 [package.extras]
@@ -65,13 +76,13 @@ typing = ["typing-extensions (>=4.12.2)"]
 
 [[package]]
 name = "identify"
-version = "2.6.8"
+version = "2.6.9"
 description = "File identification library for Python"
 optional = false
 python-versions = ">=3.9"
 files = [
-    {file = "identify-2.6.8-py2.py3-none-any.whl", hash = "sha256:83657f0f766a3c8d0eaea16d4ef42494b39b34629a4b3192a9d020d349b3e255"},
-    {file = "identify-2.6.8.tar.gz", hash = "sha256:61491417ea2c0c5c670484fd8abbb34de34cdae1e5f39a73ee65e48e4bb663fc"},
+    {file = "identify-2.6.9-py2.py3-none-any.whl", hash = "sha256:c98b4322da415a8e5a70ff6e51fbc2d2932c015532d77e9f8537b4ba7813b150"},
+    {file = "identify-2.6.9.tar.gz", hash = "sha256:d40dfe3142a1421d8518e3d3985ef5ac42890683e32306ad614a29490abeb6bf"},
 ]
 
 [package.extras]
@@ -314,14 +325,25 @@ slack = ["slack-sdk"]
 telegram = ["requests"]
 
 [[package]]
+name = "types-exifread"
+version = "3.0.0.20240806"
+description = "Typing stubs for ExifRead"
+optional = false
+python-versions = ">=3.8"
+files = [
+    {file = "types-ExifRead-3.0.0.20240806.tar.gz", hash = "sha256:2b76121b8d11b896a9e9e6e88e5f3170a5d78695e7254fa83325b86d144b08f5"},
+    {file = "types_ExifRead-3.0.0.20240806-py3-none-any.whl", hash = "sha256:f5b683202997b7faf5c08ecfac64ad17346e9549ec81730bdbc92c4f2bea3843"},
+]
+
+[[package]]
 name = "types-requests"
-version = "2.32.0.20250301"
+version = "2.32.0.20250306"
 description = "Typing stubs for requests"
 optional = false
 python-versions = ">=3.9"
 files = [
-    {file = "types_requests-2.32.0.20250301-py3-none-any.whl", hash = "sha256:0003e0124e2cbefefb88222ff822b48616af40c74df83350f599a650c8de483b"},
-    {file = "types_requests-2.32.0.20250301.tar.gz", hash = "sha256:3d909dc4eaab159c0d964ebe8bfa326a7afb4578d8706408d417e17d61b0c500"},
+    {file = "types_requests-2.32.0.20250306-py3-none-any.whl", hash = "sha256:25f2cbb5c8710b2022f8bbee7b2b66f319ef14aeea2f35d80f18c9dbf3b60a0b"},
+    {file = "types_requests-2.32.0.20250306.tar.gz", hash = "sha256:0962352694ec5b2f95fda877ee60a159abdf84a0fc6fdace599f20acb41a03d1"},
 ]
 
 [package.dependencies]
@@ -371,13 +393,13 @@ zstd = ["zstandard (>=0.18.0)"]
 
 [[package]]
 name = "virtualenv"
-version = "20.29.2"
+version = "20.29.3"
 description = "Virtual Python Environment builder"
 optional = false
 python-versions = ">=3.8"
 files = [
-    {file = "virtualenv-20.29.2-py3-none-any.whl", hash = "sha256:febddfc3d1ea571bdb1dc0f98d7b45d24def7428214d4fb73cc486c9568cce6a"},
-    {file = "virtualenv-20.29.2.tar.gz", hash = "sha256:fdaabebf6d03b5ba83ae0a02cfe96f48a716f4fae556461d180825866f75b728"},
+    {file = "virtualenv-20.29.3-py3-none-any.whl", hash = "sha256:3e3d00f5807e83b234dfb6122bf37cfadf4be216c53a49ac059d02414f819170"},
+    {file = "virtualenv-20.29.3.tar.gz", hash = "sha256:95e39403fcf3940ac45bc717597dba16110b74506131845d9b687d5e73d947ac"},
 ]
 
 [package.dependencies]
@@ -406,4 +428,4 @@ dev = ["black (>=19.3b0)", "pytest (>=4.6.2)"]
 [metadata]
 lock-version = "2.0"
 python-versions = "~3.12"
-content-hash = "317e53de3cb5f00434569a96104f7cea51af2d887735a81ddf38cf3e46171aed"
+content-hash = "f5a9e77be5af4598432c5011c530777cbe288256a1332b13097479fedfdfa308"

@@ -17,10 +17,18 @@ from . import core
     "--clean",
     "-c",
     type=bool,
+    is_flag=True,
     default=False,
     help="Whether to delete old subfolders after moving files",
 )
-def main(folder: Path, clean: bool):
+@click.option(
+    "--dry-run",
+    "-d",
+    is_flag=True,
+    default=False,
+    help="Whether to run in dry run mode (i.e. without file copy or deletion)",
+)
+def main(folder: Path, clean: bool, dry_run: bool):
     if not folder.is_dir():
         raise NotADirectoryError(f"Unable to sort files in unknown or invalid folder '{folder}'")
 
@@ -31,14 +39,18 @@ def main(folder: Path, clean: bool):
         logger.warning("Scan result is empty, no further operations are required")
         return
 
-    logger.info("Creating new structure before moving files")
-    core.create_structure(folder, scan_result)
-    logger.info("Moving files in previously created structure")
-    core.move_files(folder, scan_result)
+    logger.info(f"Creating new structure in folder '{folder}'")
+    if not dry_run:
+        core.create_structure(folder, scan_result)
+
+    logger.info(f"Moving files in folder '{folder}'")
+    if not dry_run:
+        core.move_files(folder, scan_result)
 
     if clean:
         logger.info("Cleaning old subfolders")
-        core.clean(folder, scan_result)
+        if not dry_run:
+            core.clean(folder, scan_result)
     else:
         logger.warning("Cleaning of old subfolders is disabled and should be carried out by you")
 

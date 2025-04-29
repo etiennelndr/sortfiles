@@ -55,6 +55,8 @@ def get_file_information(file_path: Path) -> FileInfo | None:
         return None
 
     file_creation_date = retrieve_file_creation_date(file_path, file_type)
+    if file_creation_date is None:
+        return None
 
     return FileInfo(
         path=file_path,
@@ -85,24 +87,30 @@ def get_file_type(file_path: Path) -> FileType | None:
         return None
 
 
-def retrieve_file_creation_date(file_path: Path, file_type: FileType) -> date:
+def retrieve_file_creation_date(file_path: Path, file_type: FileType | None = None) -> date | None:
     """Retrieves the creation date of a file.
 
     :param file_path: file path.
-    :param file_type: file type that is used to improve the process in some cases.
+    :param file_type: pre-computed file type used to improve the process in some cases (e.g. reading
+    date information in the EXIF).
     """
+    if file_type is None:
+        file_type = get_file_type(file_path)
+
+    if file_type is None:
+        # File type is unsupported: skip it
+        return None
+
     match file_type:
         case ImageType.JPG | ImageType.JPEG | ImageType.PNG | ImageType.HEIC | ImageType.RAW:
-            file_creation_date = _retrieve_creation_date_exif(file_path)
-            if file_creation_date is None:
-                file_creation_date = _retrieve_creation_date_dummy(file_path)
-            return file_creation_date
+            try:
+                return _retrieve_creation_date_exif(file_path)
+            except ValueError:
+                return _retrieve_creation_date_dummy(file_path)
         case VideoType.MOV | VideoType.MP4:
             return _retrieve_creation_date_dummy(file_path)
         case _:
-            raise NotImplementedError(
-                f"Unable to retrieve creation date for file of type ' {file_type.value}'"
-            )
+            return None
 
 
 def _retrieve_creation_date_exif(file_path: Path) -> date | None:
@@ -111,8 +119,10 @@ def _retrieve_creation_date_exif(file_path: Path) -> date | None:
 
     try:
         file_creation_date = file_img_exif["Image DateTime"].values
-    except KeyError:
-        return None
+    except KeyError as err:
+        raise ValueError(
+            f"Unable to extract creation date from EXIF for file '{file_path}'"
+        ) from err
 
     for file_creation_date_format in ("%Y:%m:%d %H:%M:%S", "%Y/%m/%d %H:%M"):
         try:
@@ -128,10 +138,10 @@ def _retrieve_creation_date_dummy(file_path: Path) -> date:
     return date.fromtimestamp(info.st_birthtime)
 
 
-_YEAR_PATTERN: re.Pattern = re.compile(r"^[1-2][0-9]{3}$")
+_YEAR_PATTERN: re.Pattern = re.compile(r"^[1-9][0-9]{3}$")
 """Year pattern.
 
-Only years in the range [1000;2999] are valid.
+Only years in the range [1000;9999] are valid.
 """
 _MONTH_PATTERN: re.Pattern = re.compile(r"^(0[1-9])|(1[1-2])$")
 
@@ -171,7 +181,8 @@ def scan(folder: Path) -> ScanResult:
 
         file_info = get_file_information(element_path)
         if file_info is None:
-            raise ValueError(f"Unable to get file information for '{element_path}'")
+            logger.warning(f"Unable to get information for file '{element_path}'")
+            continue
 
         file_creation_date = file_info.creation_date.replace(day=1)
 

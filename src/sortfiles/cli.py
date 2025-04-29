@@ -8,7 +8,15 @@ from loguru import logger
 from . import core
 
 
-@click.command(short_help="Sort files")
+def _configure_logging(verbose: bool) -> None:
+    # Remove default handlers
+    logger.remove()
+
+    logger_level = "DEBUG" if verbose else "INFO"
+    logger.add(sys.stderr, level=logger_level)
+
+
+@click.command(short_help="Sort files by date")
 @click.argument(
     "folder",
     type=click.Path(exists=True, file_okay=False, path_type=Path),
@@ -27,6 +35,13 @@ from . import core
     is_flag=True,
     default=False,
     help="Whether to run in dry run mode (i.e. without file copy or deletion)",
+)
+@click.option(
+    "--verbose",
+    "-v",
+    is_flag=True,
+    default=False,
+    help="Use this flag to increase logging verbosity",
 )
 def main(folder: Path, clean: bool, dry_run: bool):
     if not folder.is_dir():

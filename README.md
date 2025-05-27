@@ -10,5 +10,5 @@ Given a directory which contains files and/or directories, you can sort all the 
 with the following command:
 
 ```
-sortfiles <directory>
+sortfiles sort <directory>
 ```

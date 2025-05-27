@@ -1,10 +1,12 @@
 import mimetypes
 import re
+from collections import defaultdict
+from collections.abc import Iterator
 from dataclasses import dataclass
 from datetime import date, datetime
 from enum import Enum
 from pathlib import Path
-from typing import Mapping, MutableMapping, Sequence
+from typing import Mapping, Sequence
 
 from exifread import process_file
 from loguru import logger
@@ -165,6 +167,23 @@ def is_valid(path: Path) -> bool:
 
 
 type ScanResult = Mapping[date, Sequence[Path]]
+type IterResult = tuple[Path, FileInfo]
+
+
+def iterate(folder: Path, check_validity: bool = True) -> Iterator[IterResult]:
+    """Iterates on a `folder` to retrieve files."""
+    for element_path in folder.rglob("*"):
+        file_path = element_path.relative_to(folder)
+        if not element_path.is_file() or (check_validity and not is_valid(file_path)):
+            logger.debug(f"Ignoring unsortable file '{element_path}'")
+            continue
+
+        element_info = get_file_information(element_path)
+        if element_info is None:
+            logger.warning(f"Unable to get information for file '{element_path}'")
+            continue
+
+        yield element_path, element_info
 
 
 def scan(folder: Path) -> ScanResult:
@@ -172,22 +191,10 @@ def scan(folder: Path) -> ScanResult:
 
     Files are grouped by date.
     """
-    result: MutableMapping[date, list[Path]] = {}
-    for element_path in folder.rglob("*"):
-        file_path = element_path.relative_to(folder)
-        if not element_path.is_file() or not is_valid(file_path):
-            logger.debug(f"Ignoring unsortable file '{element_path}'")
-            continue
-
-        file_info = get_file_information(element_path)
-        if file_info is None:
-            logger.warning(f"Unable to get information for file '{element_path}'")
-            continue
-
-        file_creation_date = file_info.creation_date.replace(day=1)
-
-        date_elements = result.setdefault(file_creation_date, [])
-        date_elements.append(file_path)
+    result: defaultdict[date, list[Path]] = defaultdict(list)
+    for element_path, element_info in iterate(folder):
+        element_creation_date = element_info.creation_date.replace(day=1)
+        result[element_creation_date].append(element_path.relative_to(folder))
 
     return result
 
@@ -245,4 +252,43 @@ def clean(folder: Path, scan_result: ScanResult) -> None:
             old_element_folder.rmdir()
 
 
-__all__ = ["create_structure", "move_files", "scan"]
+def _retrieve_deepest_subfolders(folder: Path) -> Iterator[Path]:
+    """Retrieves the deepest subfolders within a root `folder`."""
+    if not folder.is_dir():
+        raise NotADirectoryError(f"'{folder}' is not a valid or existing folder")
+    if not any(p.is_dir() for p in folder.iterdir()):
+        yield folder
+        return
+
+    for path in folder.rglob("*/"):
+        # Folder is at the bottom iff it doesn't contain any folder
+        if not any(p.is_dir() for p in path.iterdir()):
+            yield path
+
+
+def merge(folder: Path) -> None:
+    """Merges duplicate files."""
+    for subfolder in _retrieve_deepest_subfolders(folder):
+        logger.debug(f"Retrieving files from '{subfolder}'")
+        merged_files = 0
+        for file_path, file_info in tqdm(
+            iterate(subfolder, check_validity=False), desc=f"Merging files in {subfolder}"
+        ):
+            match file_info.type:
+                case ImageType.HEIC | ImageType.JPEG | ImageType.JPG:
+                    file_stem = file_path.stem
+                    if file_stem.startswith("IMG_E"):
+                        continue
+
+                    new_file_stem = file_stem.removeprefix("IMG_")
+                    new_file_stem = f"IMG_E{new_file_stem}"
+                    new_file_path = file_path.with_stem(new_file_stem)
+                    if new_file_path.exists():
+                        new_file_path.replace(file_path)
+
+                    merged_files += 2
+
+        logger.debug(f"{merged_files} files have been merged")
+
+
+__all__ = ["create_structure", "move_files", "iterate", "scan", "merge"]

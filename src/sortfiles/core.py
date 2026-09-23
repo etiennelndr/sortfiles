@@ -142,7 +142,7 @@ _YEAR_PATTERN: Final = re.compile(r"^[1-9][0-9]{3}$")
 
 Only years in the range [1000;9999] are valid.
 """
-_MONTH_PATTERN: Final = re.compile(r"^(0[1-9])|(1[1-2])$")
+_MONTH_PATTERN: Final = re.compile(r"^(0[1-9]|1[0-2])$")
 
 
 def is_valid(path: Path) -> bool:

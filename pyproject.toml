@@ -1,34 +1,38 @@
 [build-system]
-requires = ["poetry-core"]
+requires = ["poetry-core>=2.2.0,<3.0.0"]
 build-backend = "poetry.core.masonry.api"
 
-[tool.poetry]
+[project]
 name = "sortfiles"
 version = "0.1.0"
 description = ""
-authors = ["Etienne Landuré <25793763+etiennelndr@users.noreply.github.com>"]
+authors = [
+    { name = "Etienne Landuré", email = "25793763+etiennelndr@users.noreply.github.com" }
+]
 readme = "README.md"
+requires-python = ">=3.14,<3.15"
+dependencies = [
+    "loguru==0.7.3",
+    "click==8.5.0",
+    "tqdm==4.70.1",
+    "exifread==3.5.1",
+]
+
+[project.scripts]
+sortfiles = "sortfiles.__main__:main"
+
+[dependency-groups]
+dev = [
+    "ruff==0.16.8",
+    "mypy==2.3.1",
+    "pre-commit==4.6.2",
+    "types-tqdm==4.70.0.20260906",
+]
+
+[tool.poetry]
 packages = [
     { include = "sortfiles", from = "src" }
 ]
-
-[tool.poetry.dependencies]
-python = "~3.12"
-loguru = "0.7.3"
-click = "8.1.8"
-tqdm = "4.67.1"
-exifread = "<3"
-
-[tool.poetry.group.dev.dependencies]
-ruff = "0.9.9"
-mypy = "1.15.0"
-pre-commit = "4.1.0"
-types-tqdm = "4.67.0.20250301"
-types-exifread = "3.0.0.20240806"
-
-
-[tool.poetry.scripts]
-sortfiles = "sortfiles.__main__:main"
 
 [tool.mypy]
 files = ["src/sortfiles"]
@@ -36,7 +40,7 @@ files = ["src/sortfiles"]
 [tool.ruff]
 line-length = 100
 indent-width = 4
-target-version = "py312"
+target-version = "py314"
 
 [tool.ruff.lint]
 select = [
@@ -49,4 +53,3 @@ select = [
     # Pylint
     "PL"
 ]
-

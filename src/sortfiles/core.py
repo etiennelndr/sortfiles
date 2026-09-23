@@ -148,18 +148,16 @@ _MONTH_PATTERN: Final = re.compile(r"^(0[1-9]|1[0-2])$")
 def is_valid(path: Path) -> bool:
     """Checks whether a path is sortable or not.
 
-    A path is sortable iff:
-
-    * first path element is not a folder whose name is a valid year number;
-    * second path element is not a folder whose name is a valid month number.
+    A path is sortable iff it is not already sorted, i.e. it is not located in a year folder
+    containing a month folder (e.g. `2024/10/...`).
     """
     file_path_elements = path.parts
-    if len(file_path_elements) < 2:  # noqa: PLR2004
+    if len(file_path_elements) < 3:  # noqa: PLR2004
         return True
 
     return (
         _YEAR_PATTERN.fullmatch(file_path_elements[0]) is None
-        and _MONTH_PATTERN.fullmatch(file_path_elements[1]) is None
+        or _MONTH_PATTERN.fullmatch(file_path_elements[1]) is None
     )
 
 

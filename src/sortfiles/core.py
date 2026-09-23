@@ -1,12 +1,12 @@
 import mimetypes
 import re
 from collections import defaultdict
-from collections.abc import Iterator
+from collections.abc import Iterator, Mapping, Sequence
 from dataclasses import dataclass
 from datetime import date, datetime
 from enum import Enum
 from pathlib import Path
-from typing import Mapping, Sequence
+from typing import Final
 
 from exifread import process_file
 from loguru import logger
@@ -99,10 +99,6 @@ def retrieve_file_creation_date(file_path: Path, file_type: FileType | None = No
     if file_type is None:
         file_type = get_file_type(file_path)
 
-    if file_type is None:
-        # File type is unsupported: skip it
-        return None
-
     match file_type:
         case ImageType.JPG | ImageType.JPEG | ImageType.PNG | ImageType.HEIC | ImageType.RAW:
             try:
@@ -112,6 +108,7 @@ def retrieve_file_creation_date(file_path: Path, file_type: FileType | None = No
         case VideoType.MOV | VideoType.MP4:
             return _retrieve_creation_date_dummy(file_path)
         case _:
+            # File type is unsupported: skip it
             return None
 
 
@@ -140,12 +137,12 @@ def _retrieve_creation_date_dummy(file_path: Path) -> date:
     return date.fromtimestamp(info.st_birthtime)
 
 
-_YEAR_PATTERN: re.Pattern = re.compile(r"^[1-9][0-9]{3}$")
+_YEAR_PATTERN: Final = re.compile(r"^[1-9][0-9]{3}$")
 """Year pattern.
 
 Only years in the range [1000;9999] are valid.
 """
-_MONTH_PATTERN: re.Pattern = re.compile(r"^(0[1-9])|(1[1-2])$")
+_MONTH_PATTERN: Final = re.compile(r"^(0[1-9])|(1[1-2])$")
 
 
 def is_valid(path: Path) -> bool:
@@ -172,18 +169,18 @@ type IterResult = tuple[Path, FileInfo]
 
 def iterate(folder: Path, check_validity: bool = True) -> Iterator[IterResult]:
     """Iterates on a `folder` to retrieve files."""
-    for element_path in folder.rglob("*"):
-        file_path = element_path.relative_to(folder)
-        if not element_path.is_file() or (check_validity and not is_valid(file_path)):
-            logger.debug(f"Ignoring unsortable file '{element_path}'")
+    for file_path in folder.rglob("*"):
+        file_path_relative = file_path.relative_to(folder)
+        if not file_path.is_file() or (check_validity and not is_valid(file_path_relative)):
+            logger.debug(f"Ignoring unsortable file '{file_path}'")
             continue
 
-        element_info = get_file_information(element_path)
-        if element_info is None:
-            logger.warning(f"Unable to get information for file '{element_path}'")
+        file_info = get_file_information(file_path)
+        if file_info is None:
+            logger.warning(f"Unable to get information for file '{file_path}'")
             continue
 
-        yield element_path, element_info
+        yield file_path, file_info
 
 
 def scan(folder: Path) -> ScanResult:

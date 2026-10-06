@@ -5,7 +5,7 @@ build-backend = "poetry.core.masonry.api"
 [project]
 name = "sortfiles"
 version = "0.1.0"
-description = ""
+description = "A simple way to sort pictures and videos of a folder by year and month."
 authors = [
     { name = "Etienne Landuré", email = "25793763+etiennelndr@users.noreply.github.com" }
 ]

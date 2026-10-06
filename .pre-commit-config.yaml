@@ -6,16 +6,17 @@ repos:
         name: Ruff Check
         stages:
           - pre-commit
-        language: python
-        entry: ruff check --fix
+        language: system
+        entry: poetry run ruff check --fix
         types:
           - python
+
       - id: ruff-format
         name: Ruff Format
         stages:
           - pre-commit
-        language: python
-        entry: ruff format
+        language: system
+        entry: poetry run ruff format
         types:
           - python
 
@@ -24,8 +25,8 @@ repos:
         name: MyPy
         stages:
           - pre-commit
-        language: python
-        entry: mypy
+        language: system
+        entry: poetry run mypy
         types:
           - python
         pass_filenames: false
@@ -35,8 +36,8 @@ repos:
         name: Pytest
         stages:
           - pre-commit
-        language: python
-        entry: pytest
+        language: system
+        entry: poetry run pytest
         types:
           - python
         pass_filenames: false

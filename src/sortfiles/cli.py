@@ -72,8 +72,12 @@ def main_sort(folder: Path, clean: bool, dry_run: bool) -> None:
     logger.info(f"Sorting files in folder '{folder}'")
     logger.info("Scanning input folder to extract dates and files")
     scan_result = core.scan(folder)
-    if not scan_result:
-        logger.warning("Scan result is empty, no further operations are required")
+    ignored_summary = (
+        f"{len(scan_result.sorted_files)} already sorted, "
+        f"{len(scan_result.unsupported_files)} unsupported"
+    )
+    if not scan_result.files:
+        logger.warning(f"No file to sort ({ignored_summary}), no further operations are required")
         return
 
     logger.info(f"Creating new structure in folder '{folder}'")
@@ -81,7 +85,7 @@ def main_sort(folder: Path, clean: bool, dry_run: bool) -> None:
         core.create_structure(folder, scan_result)
 
     logger.info(f"Moving files in folder '{folder}'")
-    core.move_files(folder, scan_result, dry_run=dry_run)
+    files_count = core.move_files(folder, scan_result, dry_run=dry_run)
 
     if clean:
         logger.info("Cleaning old subfolders")
@@ -90,7 +94,17 @@ def main_sort(folder: Path, clean: bool, dry_run: bool) -> None:
     else:
         logger.warning("Cleaning of old subfolders is disabled and should be carried out by you")
 
-    logger.success("File sorting successfully completed")
+    folders_count = len(scan_result.files)
+    if dry_run:
+        logger.info(
+            f"Dry run completed, no file has been modified: {files_count} file(s) would be moved "
+            f"to {folders_count} folder(s), {ignored_summary}"
+        )
+    else:
+        logger.success(
+            f"File sorting successfully completed: {files_count} file(s) moved to "
+            f"{folders_count} folder(s), {ignored_summary}"
+        )
 
 
 @main.command(name="merge", short_help="Merge duplicate files")

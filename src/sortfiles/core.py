@@ -2,8 +2,7 @@ import glob
 import mimetypes
 import re
 from collections import defaultdict
-from collections.abc import Iterator, Mapping, Sequence
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from datetime import date, datetime
 from enum import Enum
 from pathlib import Path
@@ -213,53 +212,65 @@ def is_valid(path: Path) -> bool:
     )
 
 
-type ScanResult = Mapping[date, Sequence[Path]]
-type IterResult = tuple[Path, FileInfo]
+@dataclass
+class ScanResult:
+    """Result of the scan of a folder.
 
+    All paths are relative to the scanned folder.
+    """
 
-def iterate(folder: Path, check_validity: bool = True) -> Iterator[IterResult]:
-    """Iterates on a `folder` to retrieve files."""
-    for file_path in folder.rglob("*"):
-        file_path_relative = file_path.relative_to(folder)
-        if not file_path.is_file() or (check_validity and not is_valid(file_path_relative)):
-            logger.debug(f"Ignoring unsortable file '{file_path}'")
-            continue
-
-        file_info = get_file_information(file_path)
-        if file_info is None:
-            logger.warning(f"Unable to get information for file '{file_path}'")
-            continue
-
-        yield file_path, file_info
+    files: dict[date, list[Path]] = field(default_factory=lambda: defaultdict(list))
+    """Files to sort, grouped by month (i.e. by the first day of their month)."""
+    sorted_files: list[Path] = field(default_factory=list)
+    """Files ignored because they are already sorted."""
+    unsupported_files: list[Path] = field(default_factory=list)
+    """Files ignored because their type or their date cannot be determined."""
 
 
 def scan(folder: Path) -> ScanResult:
     """Recursively scans a folder to sort.
 
-    Files are grouped by date.
+    Files which are already sorted or unsupported are reported in the result but are not sorted.
     """
-    result: defaultdict[date, list[Path]] = defaultdict(list)
-    for element_path, element_info in iterate(folder):
-        element_creation_date = element_info.creation_date.replace(day=1)
-        result[element_creation_date].append(element_path.relative_to(folder))
+    result = ScanResult()
+    for file_path in folder.rglob("*"):
+        if not file_path.is_file():
+            continue
+
+        file_path_relative = file_path.relative_to(folder)
+        if not is_valid(file_path_relative):
+            logger.debug(f"Ignoring already sorted file '{file_path}'")
+            result.sorted_files.append(file_path_relative)
+            continue
+
+        file_info = get_file_information(file_path)
+        if file_info is None:
+            logger.debug(f"Ignoring unsupported file '{file_path}'")
+            result.unsupported_files.append(file_path_relative)
+            continue
+
+        result.files[file_info.creation_date.replace(day=1)].append(file_path_relative)
 
     return result
 
 
 def create_structure(folder: Path, scan_result: ScanResult) -> None:
-    """Creates structure from a scan result."""
-    for scan_date in scan_result.keys():
+    """Creates the `<year>/<month>` folders required by a scan result."""
+    for scan_date in scan_result.files:
         scan_date_folder = folder / str(scan_date.year) / str(scan_date.month).zfill(2)
         logger.debug(f"Creating folder '{scan_date_folder}'")
         scan_date_folder.mkdir(parents=True, exist_ok=True)
 
 
 def _compute_scan_result_size(scan_result: ScanResult) -> int:
-    return sum(len(p) for p in scan_result.values())
+    return sum(len(p) for p in scan_result.files.values())
 
 
-def move_files(folder: Path, scan_result: ScanResult, dry_run: bool = False) -> None:
-    """Moves files of a scan.
+def move_files(folder: Path, scan_result: ScanResult, dry_run: bool = False) -> int:
+    """Moves files of a scan to their `<year>/<month>` folder.
+
+    The path of a file relative to `folder` is kept: `holidays/IMG_1234.jpg` is moved to
+    `<year>/<month>/holidays/IMG_1234.jpg`.
 
     Structure must be created before running this function. If not, an error is raised.
 
@@ -267,13 +278,11 @@ def move_files(folder: Path, scan_result: ScanResult, dry_run: bool = False) -> 
     :param scan_result: result of the scan of `folder`.
     :param dry_run: whether to only log the moves instead of running them. Structure is not required
     in this mode.
+    :return: number of moved files.
     """
-    with tqdm(
-        desc=f"Moving files in {folder}",
-        total=_compute_scan_result_size(scan_result),
-        disable=dry_run,
-    ) as pbar:
-        for scan_date, scan_elements in scan_result.items():
+    files_count = _compute_scan_result_size(scan_result)
+    with tqdm(desc=f"Moving files in {folder}", total=files_count, disable=dry_run) as pbar:
+        for scan_date, scan_elements in scan_result.files.items():
             scan_date_folder = folder / str(scan_date.year) / str(scan_date.month).zfill(2)
             if not dry_run and not scan_date_folder.exists():
                 raise OSError(f"Date folder '{scan_date_folder}' does not exist")
@@ -294,6 +303,8 @@ def move_files(folder: Path, scan_result: ScanResult, dry_run: bool = False) -> 
                 # Update the progress after moving the file
                 pbar.update()
 
+    return files_count
+
 
 def clean(folder: Path, scan_result: ScanResult) -> None:
     """Cleans the folders left empty after moving files.
@@ -301,7 +312,7 @@ def clean(folder: Path, scan_result: ScanResult) -> None:
     Folders which still contain something (e.g. unsupported files) are kept, and `folder` itself is
     never removed. This function must be run after moving files.
     """
-    for scan_elements in scan_result.values():
+    for scan_elements in scan_result.files.values():
         for element_path in scan_elements:
             # Walk up from the old parent folder to the root folder (excluded)
             for old_element_folder_relative in element_path.parents:
@@ -382,4 +393,4 @@ def merge(folder: Path, dry_run: bool = False) -> None:
         logger.info(f"{merged_files} files have been merged in '{folder}'")
 
 
-__all__ = ["clean", "create_structure", "iterate", "merge", "move_files", "scan"]
+__all__ = ["clean", "create_structure", "merge", "move_files", "scan"]

@@ -6,7 +6,7 @@ from typing import override
 import click
 from loguru import logger
 
-from . import core
+from . import merge, sort
 
 
 def _verbose_callback(_ctx: click.Context, _param: click.Parameter, value: bool) -> bool:
@@ -75,7 +75,7 @@ def main_sort(folder: Path, clean: bool, dry_run: bool) -> None:
 
     logger.info(f"Sorting files in folder '{folder}'")
     logger.info("Scanning input folder to extract dates and files")
-    scan_result = core.scan(folder)
+    scan_result = sort.scan(folder)
     ignored_summary = (
         f"{len(scan_result.sorted_files)} already sorted, "
         f"{len(scan_result.unsupported_files)} unsupported"
@@ -86,15 +86,15 @@ def main_sort(folder: Path, clean: bool, dry_run: bool) -> None:
 
     logger.info(f"Creating new structure in folder '{folder}'")
     if not dry_run:
-        core.create_structure(folder, scan_result)
+        sort.create_structure(folder, scan_result)
 
     logger.info(f"Moving files in folder '{folder}'")
-    files_count = core.move_files(folder, scan_result, dry_run=dry_run)
+    files_count = sort.move_files(folder, scan_result, dry_run=dry_run)
 
     if clean:
         logger.info("Cleaning old subfolders")
         if not dry_run:
-            core.clean(folder, scan_result)
+            sort.clean(folder, scan_result)
     else:
         logger.warning("Cleaning of old subfolders is disabled and should be carried out by you")
 
@@ -134,7 +134,7 @@ def main_merge(folder: Path, dry_run: bool) -> None:
         sys.exit(1)
 
     logger.info(f"Merging duplicate files in folder '{folder}'")
-    core.merge(folder, dry_run=dry_run)
+    merge.merge(folder, dry_run=dry_run)
 
 
 def run(argv: Sequence[str] | None = None) -> None:

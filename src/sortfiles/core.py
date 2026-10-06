@@ -1,3 +1,4 @@
+import glob
 import mimetypes
 import re
 from collections import defaultdict
@@ -275,55 +276,67 @@ def clean(folder: Path, scan_result: ScanResult) -> None:
                 old_element_folder.rmdir()
 
 
-def _retrieve_deepest_subfolders(folder: Path) -> Iterator[Path]:
-    """Retrieves the deepest subfolders within a root `folder`."""
-    if not folder.is_dir():
-        raise NotADirectoryError(f"'{folder}' is not a valid or existing folder")
-    if not any(p.is_dir() for p in folder.iterdir()):
-        yield folder
-        return
+_ORIGINAL_PREFIX: Final = "IMG_"
+_EDITED_PREFIX: Final = "IMG_E"
+_MERGEABLE_TYPES: Final = (ImageType.HEIC, ImageType.JPEG)
 
-    for path in folder.rglob("*/"):
-        # Folder is at the bottom iff it doesn't contain any folder
-        if not any(p.is_dir() for p in path.iterdir()):
-            yield path
+
+def _find_edited_file(file_path: Path) -> Path | None:
+    """Finds the edited version of an original picture (e.g. `IMG_E1234` for `IMG_1234`).
+
+    The edited version may have another extension than the original one (e.g. `IMG_1234.heic` and
+    `IMG_E1234.jpg`). The one sharing the extension of the original picture is preferred.
+    """
+    edited_file_stem = _EDITED_PREFIX + file_path.stem.removeprefix(_ORIGINAL_PREFIX)
+    edited_file_path = file_path.with_stem(edited_file_stem)
+    if edited_file_path.is_file():
+        return edited_file_path
+
+    for edited_file_path in sorted(file_path.parent.glob(f"{glob.escape(edited_file_stem)}.*")):
+        if get_file_type(edited_file_path) in _MERGEABLE_TYPES:
+            return edited_file_path
+
+    return None
 
 
 def merge(folder: Path, dry_run: bool = False) -> None:
     """Merges duplicate files.
 
-    :param folder: folder containing the files to merge.
+    Each original picture (`IMG_1234`) is replaced with its edited version (`IMG_E1234`) when both
+    are found in the same folder. The merged picture keeps the name of the original one and the
+    extension of the edited one.
+
+    :param folder: folder containing the files to merge, scanned recursively.
     :param dry_run: whether to only log the merges instead of running them.
     """
-    for subfolder in _retrieve_deepest_subfolders(folder):
-        logger.debug(f"Retrieving files from '{subfolder}'")
-        merged_files = 0
-        for file_path, file_info in tqdm(
-            iterate(subfolder, check_validity=False),
-            desc=f"Merging files in {subfolder}",
-            disable=dry_run,
-        ):
-            match file_info.type:
-                case ImageType.HEIC | ImageType.JPEG:
-                    file_stem = file_path.stem
-                    if file_stem.startswith("IMG_E"):
-                        continue
+    # Files are listed beforehand as merging removes and renames some of them
+    file_paths = sorted(p for p in folder.rglob("*") if p.is_file())
+    merged_files = 0
+    for file_path in tqdm(file_paths, desc=f"Merging files in {folder}", disable=dry_run):
+        file_stem = file_path.stem
+        if not file_stem.startswith(_ORIGINAL_PREFIX) or file_stem.startswith(_EDITED_PREFIX):
+            continue
+        if get_file_type(file_path) not in _MERGEABLE_TYPES:
+            continue
 
-                    new_file_stem = file_stem.removeprefix("IMG_")
-                    new_file_stem = f"IMG_E{new_file_stem}"
-                    new_file_path = file_path.with_stem(new_file_stem)
-                    if new_file_path.exists():
-                        if dry_run:
-                            logger.info(f"Would replace '{file_path}' with '{new_file_path}'")
-                        else:
-                            logger.debug(f"Replacing '{file_path}' with '{new_file_path}'")
-                            new_file_path.replace(file_path)
-                        merged_files += 2
+        edited_file_path = _find_edited_file(file_path)
+        if edited_file_path is None:
+            continue
 
+        merged_file_path = file_path.with_suffix(edited_file_path.suffix)
         if dry_run:
-            logger.info(f"{merged_files} files would be merged in '{subfolder}'")
+            logger.info(f"Would replace '{file_path}' with '{edited_file_path}'")
         else:
-            logger.info(f"{merged_files} files have been merged in '{subfolder}'")
+            logger.debug(f"Replacing '{file_path}' with '{edited_file_path}'")
+            if merged_file_path != file_path:
+                file_path.unlink()
+            edited_file_path.replace(merged_file_path)
+        merged_files += 2
+
+    if dry_run:
+        logger.info(f"{merged_files} files would be merged in '{folder}'")
+    else:
+        logger.info(f"{merged_files} files have been merged in '{folder}'")
 
 
 __all__ = ["clean", "create_structure", "iterate", "merge", "move_files", "scan"]

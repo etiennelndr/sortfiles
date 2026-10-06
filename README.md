@@ -59,7 +59,8 @@ edited version:
 sortfiles merge <directory>
 ```
 
-Only the deepest subfolders of `<directory>` (i.e. the ones without any subfolder) are processed.
+`<directory>` is processed recursively. The merged picture keeps the name of the original one and
+the extension of the edited one: `IMG_1234.heic` and `IMG_E1234.jpg` are merged into `IMG_1234.jpg`.
 
 | Option            | Description                                                |
 |-------------------|------------------------------------------------------------|

@@ -112,22 +112,27 @@ def retrieve_file_creation_date(file_path: Path, file_type: FileType | None = No
             return None
 
 
-def _retrieve_creation_date_exif(file_path: Path) -> date | None:
+_EXIF_DATE_TAGS: Final = ("EXIF DateTimeOriginal", "EXIF DateTimeDigitized", "Image DateTime")
+"""EXIF tags holding a date, from the most to the least reliable.
+
+`Image DateTime` is the last modification date: it is only used when the shooting date is missing.
+"""
+
+
+def _retrieve_creation_date_exif(file_path: Path) -> date:
     with file_path.open("rb") as file_path_stream:
         file_img_exif = process_file(file_path_stream)
 
-    try:
-        file_creation_date = file_img_exif["Image DateTime"].values
-    except KeyError as err:
-        raise ValueError(
-            f"Unable to extract creation date from EXIF for file '{file_path}'"
-        ) from err
+    for file_creation_date_tag in _EXIF_DATE_TAGS:
+        if file_creation_date_tag not in file_img_exif:
+            continue
 
-    for file_creation_date_format in ("%Y:%m:%d %H:%M:%S", "%Y/%m/%d %H:%M"):
-        try:
-            return datetime.strptime(file_creation_date, file_creation_date_format).date()
-        except ValueError:
-            pass
+        file_creation_date = str(file_img_exif[file_creation_date_tag].values)
+        for file_creation_date_format in ("%Y:%m:%d %H:%M:%S", "%Y/%m/%d %H:%M"):
+            try:
+                return datetime.strptime(file_creation_date, file_creation_date_format).date()
+            except ValueError:
+                pass
 
     raise ValueError(f"Unable to extract creation date from EXIF for file '{file_path}'")
 

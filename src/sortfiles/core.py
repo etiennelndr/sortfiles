@@ -36,6 +36,19 @@ class VideoType(FileType):
     MP4 = "mp4"
 
 
+class SidecarType(FileType):
+    """An enumeration of supported sidecar types.
+
+    A sidecar is a file holding metadata of a picture or a video (e.g. `IMG_1234.aae` for
+    `IMG_1234.jpg`). It has no date of its own: it is sorted along with the file it is attached to.
+
+    Values are extensions.
+    """
+
+    AAE = "aae"
+    XMP = "xmp"
+
+
 @dataclass
 class FileInfo:
     """File information."""
@@ -67,6 +80,12 @@ def get_file_type(file_path: Path) -> FileType | None:
     if not file_path.is_file():
         return None
 
+    # Sidecars have no reliable MIME type: they are identified by their extension
+    try:
+        return SidecarType(file_path.suffix.removeprefix(".").lower())
+    except ValueError:
+        pass
+
     file_mimetype, _ = mimetypes.guess_type(file_path)
     if file_mimetype is None:
         return file_mimetype
@@ -79,10 +98,10 @@ def get_file_type(file_path: Path) -> FileType | None:
                 return ImageType(file_type)
             case "video":
                 return VideoType(file_type)
-            case _:
-                return None
     except ValueError:
-        return None
+        pass
+
+    return None
 
 
 def retrieve_file_creation_date(file_path: Path, file_type: FileType | None = None) -> date | None:
@@ -103,9 +122,33 @@ def retrieve_file_creation_date(file_path: Path, file_type: FileType | None = No
                 return _retrieve_creation_date_dummy(file_path)
         case VideoType.MOV | VideoType.MP4:
             return _retrieve_creation_date_dummy(file_path)
+        case SidecarType():
+            owner_path = _find_sidecar_owner(file_path)
+            if owner_path is None:
+                return None
+
+            return retrieve_file_creation_date(owner_path)
         case _:
             # File type is unsupported: skip it
             return None
+
+
+def _find_sidecar_owner(sidecar_path: Path) -> Path | None:
+    """Finds the picture or the video a sidecar is attached to.
+
+    It is the file of the same folder sharing the name of the sidecar: `IMG_1234.jpg` for
+    `IMG_1234.aae` as well as for `IMG_1234.jpg.xmp`.
+    """
+    owner_paths = [
+        sidecar_path.with_suffix(""),
+        *sorted(sidecar_path.parent.glob(f"{glob.escape(sidecar_path.stem)}.*")),
+    ]
+    for owner_path in owner_paths:
+        owner_type = get_file_type(owner_path)
+        if owner_type is not None and not isinstance(owner_type, SidecarType):
+            return owner_path
+
+    return None
 
 
 _EXIF_DATE_TAGS: Final = ("EXIF DateTimeOriginal", "EXIF DateTimeDigitized", "Image DateTime")

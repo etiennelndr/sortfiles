@@ -40,6 +40,9 @@ relative to `<directory>` is kept:
 The date of a picture is read from its EXIF metadata (shooting date). If it is missing, and for
 videos, the oldest date between the creation and the modification of the file is used.
 
+Sidecars (e.g. `IMG_0001.aae` or `IMG_0001.jpg.xmp`) are moved along with the picture or the video
+of the same name.
+
 Files which are already located in a `<year>/<month>` folder and unsupported files are left
 untouched.
 

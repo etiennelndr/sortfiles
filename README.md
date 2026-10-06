@@ -76,3 +76,34 @@ Supported files
 - Pictures: HEIC, JPEG, PNG and raw formats (ARW, CR2, DNG, NEF, RAW)
 - Videos: MOV and MP4
 - Sidecars: AAE and XMP
+
+Development
+-----------
+
+### Git hooks
+
+This project relies on [pre-commit](https://pre-commit.com/) to run the checks below and the tests
+before each commit. The hooks have to be installed once per clone:
+
+```
+poetry run pre-commit install
+```
+
+### Tests
+
+Tests are written with [pytest](https://docs.pytest.org/):
+
+```
+poetry run pytest
+```
+
+### Code quality
+
+Linting and formatting are handled by [Ruff](https://docs.astral.sh/ruff/), static type checking by
+[mypy](https://mypy-lang.org/):
+
+```
+poetry run ruff check
+poetry run ruff format --check
+poetry run mypy
+```

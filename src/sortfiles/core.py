@@ -1,3 +1,5 @@
+"""Sorting of pictures and videos by date, and merge of duplicate pictures."""
+
 import glob
 import logging
 import mimetypes
@@ -19,7 +21,11 @@ logging.getLogger("exifread").setLevel(logging.ERROR)
 
 
 class FileType(Enum):
-    """An enumeration of supported file types."""
+    """An enumeration of supported file types.
+
+    Unless otherwise stated, values are MIME subtypes and not extensions: `.jpg` and `.jpeg` files
+    are both `image/jpeg`, `.mov` files are `video/quicktime`.
+    """
 
 
 class ImageType(FileType):
@@ -71,7 +77,7 @@ class FileInfo:
 
 
 def get_file_information(file_path: Path) -> FileInfo | None:
-    """Retrieves file information."""
+    """Retrieves file information, or `None` if its type or its date cannot be determined."""
     file_type = get_file_type(file_path)
     if file_type is None:
         return None
@@ -88,7 +94,7 @@ def get_file_information(file_path: Path) -> FileInfo | None:
 
 
 def get_file_type(file_path: Path) -> FileType | None:
-    """Retrieves file type."""
+    """Retrieves file type, or `None` if the path is not a file or its type is unsupported."""
     if not file_path.is_file():
         return None
 
@@ -119,9 +125,15 @@ def get_file_type(file_path: Path) -> FileType | None:
 def retrieve_file_creation_date(file_path: Path, file_type: FileType | None = None) -> date | None:
     """Retrieves the creation date of a file.
 
+    The source of the date depends on the file type:
+
+    - picture: EXIF metadata, or the file system if they hold no date;
+    - video: file system;
+    - sidecar: date of the picture or the video it is attached to.
+
     :param file_path: file path.
-    :param file_type: pre-computed file type used to improve the process in some cases (e.g. reading
-    date information in the EXIF).
+    :param file_type: pre-computed file type, to avoid determining it again.
+    :return: creation date, or `None` if the file is unsupported or is a sidecar without owner.
     """
     if file_type is None:
         file_type = get_file_type(file_path)
@@ -171,6 +183,10 @@ _EXIF_DATE_TAGS: Final = ("EXIF DateTimeOriginal", "EXIF DateTimeDigitized", "Im
 
 
 def _retrieve_creation_date_exif(file_path: Path) -> date:
+    """Retrieves the creation date of a picture from its EXIF metadata.
+
+    :raise ValueError: if EXIF metadata hold no readable date.
+    """
     with file_path.open("rb") as file_path_stream:
         # Dates are stored in standard tags: maker notes and thumbnail are useless and slow to read
         file_img_exif = process_file(file_path_stream, details=False, extract_thumbnail=False)
@@ -190,6 +206,7 @@ def _retrieve_creation_date_exif(file_path: Path) -> date:
 
 
 def _retrieve_creation_date_dummy(file_path: Path) -> date:
+    """Retrieves the creation date of a file from the file system."""
     info = file_path.stat()
     # Birth time is unavailable on some platforms (e.g. Linux). Moreover, a copy is a new file: its
     # birth time is the date of the copy, whereas its modification time is usually preserved. The
@@ -215,6 +232,8 @@ def is_valid(path: Path) -> bool:
 
     A path is sortable iff it is not already sorted, i.e. it is not located in a year folder
     containing a month folder (e.g. `2024/10/...`).
+
+    :param path: path relative to the folder to sort. Only its first two levels are checked.
     """
     file_path_elements = path.parts
     if len(file_path_elements) < 3:  # noqa: PLR2004

@@ -40,7 +40,7 @@ class CLIGroup(click.Group):
 
 @click.group("sortfiles", cls=CLIGroup)
 def main() -> None:
-    pass
+    """Sorts pictures and videos by date."""
 
 
 @main.command(name="sort", short_help="Sort files by date")
@@ -54,17 +54,21 @@ def main() -> None:
     type=bool,
     is_flag=True,
     default=False,
-    help="Whether to delete old subfolders after moving files",
+    help="Delete the old subfolders left empty after moving files",
 )
 @click.option(
     "--dry-run",
     "-d",
     is_flag=True,
     default=False,
-    help="Whether to run in dry run mode (i.e. without file copy or deletion)",
+    help="Only log what would be moved, without modifying any file",
 )
 def main_sort(folder: Path, clean: bool, dry_run: bool) -> None:
-    """Sorts files by date."""
+    """Sorts pictures and videos of FOLDER by date.
+
+    Each file is moved to a <year>/<month> subfolder of FOLDER, along with its sidecars. Files
+    which are already sorted or unsupported are left untouched.
+    """
     if not folder.is_dir():
         logger.error(f"Unable to sort files in unknown or invalid folder '{folder}'")
         sys.exit(1)
@@ -117,10 +121,14 @@ def main_sort(folder: Path, clean: bool, dry_run: bool) -> None:
     "-d",
     is_flag=True,
     default=False,
-    help="Whether to run in dry run mode (i.e. without file deletion)",
+    help="Only log what would be merged, without modifying any file",
 )
 def main_merge(folder: Path, dry_run: bool) -> None:
-    """Merges duplicate files."""
+    """Merges duplicate pictures of FOLDER.
+
+    Each original picture (IMG_1234) is replaced with its edited version (IMG_E1234) when both are
+    found in the same folder.
+    """
     if not folder.is_dir():
         logger.error(f"Unable to merge files in unknown or invalid folder '{folder}'")
         sys.exit(1)

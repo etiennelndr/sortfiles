@@ -28,7 +28,6 @@ class ImageType(FileType):
     """An enumeration of supported image types."""
 
     HEIC = "heic"
-    JPG = "jpg"
     JPEG = "jpeg"
     PNG = "png"
     RAW = "raw"
@@ -76,7 +75,8 @@ def get_file_type(file_path: Path) -> FileType | None:
     if file_mimetype is None:
         return file_mimetype
 
-    file_class, file_type = file_mimetype.split("/", maxsplit=1)
+    # Case of the MIME type depends on the platform (e.g. `image/RAW` on Windows)
+    file_class, file_type = file_mimetype.lower().split("/", maxsplit=1)
     try:
         match file_class:
             case "image":
@@ -100,7 +100,7 @@ def retrieve_file_creation_date(file_path: Path, file_type: FileType | None = No
         file_type = get_file_type(file_path)
 
     match file_type:
-        case ImageType.JPG | ImageType.JPEG | ImageType.PNG | ImageType.HEIC | ImageType.RAW:
+        case ImageType.JPEG | ImageType.PNG | ImageType.HEIC | ImageType.RAW:
             try:
                 return _retrieve_creation_date_exif(file_path)
             except ValueError:
@@ -292,7 +292,7 @@ def merge(folder: Path) -> None:
             iterate(subfolder, check_validity=False), desc=f"Merging files in {subfolder}"
         ):
             match file_info.type:
-                case ImageType.HEIC | ImageType.JPEG | ImageType.JPG:
+                case ImageType.HEIC | ImageType.JPEG:
                     file_stem = file_path.stem
                     if file_stem.startswith("IMG_E"):
                         continue

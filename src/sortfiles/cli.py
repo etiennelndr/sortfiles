@@ -1,6 +1,7 @@
 import sys
+from collections.abc import Sequence
 from pathlib import Path
-from typing import Sequence, override
+from typing import override
 
 import click
 from loguru import logger
@@ -62,7 +63,7 @@ def main() -> None:
     default=False,
     help="Whether to run in dry run mode (i.e. without file copy or deletion)",
 )
-def main_sort(folder: Path, clean: bool, dry_run: bool):
+def main_sort(folder: Path, clean: bool, dry_run: bool) -> None:
     """Sorts files by date."""
     if not folder.is_dir():
         logger.error(f"Unable to sort files in unknown or invalid folder '{folder}'")

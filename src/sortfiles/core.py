@@ -18,11 +18,6 @@ mimetypes.init()
 class FileType(Enum):
     """An enumeration of supported file types."""
 
-    @classmethod
-    def all(cls) -> set[str]:
-        """Returns all file types."""
-        return {ft.value for ft in cls}
-
 
 class ImageType(FileType):
     """An enumeration of supported image types."""
@@ -219,15 +214,15 @@ def _compute_scan_result_size(scan_result: ScanResult) -> int:
     return sum(len(p) for p in scan_result.values())
 
 
-    :param folder: folder to sort.
-    :param scan_result: result of the scan of `folder`.
-    :param dry_run: whether to only log the moves instead of running them. Structure is not required
-    in this mode.
-
 def move_files(folder: Path, scan_result: ScanResult, dry_run: bool = False) -> None:
     """Moves files of a scan.
 
     Structure must be created before running this function. If not, an error is raised.
+
+    :param folder: folder to sort.
+    :param scan_result: result of the scan of `folder`.
+    :param dry_run: whether to only log the moves instead of running them. Structure is not required
+    in this mode.
     """
     with tqdm(
         desc=f"Moving files in {folder}",
@@ -237,6 +232,11 @@ def move_files(folder: Path, scan_result: ScanResult, dry_run: bool = False) -> 
         for scan_date, scan_elements in scan_result.items():
             scan_date_folder = folder / str(scan_date.year) / str(scan_date.month).zfill(2)
             if not dry_run and not scan_date_folder.exists():
+                raise OSError(f"Date folder '{scan_date_folder}' does not exist")
+
+            for element_path in scan_elements:
+                old_element_path = folder / element_path
+                new_element_path = scan_date_folder / element_path
                 if dry_run:
                     already_exists = " (already exists)" if new_element_path.exists() else ""
                     logger.info(
@@ -244,11 +244,6 @@ def move_files(folder: Path, scan_result: ScanResult, dry_run: bool = False) -> 
                     )
                     continue
 
-                raise OSError(f"Date folder '{scan_date_folder}' does not exist")
-
-            for element_path in scan_elements:
-                old_element_path = folder / element_path
-                new_element_path = scan_date_folder / element_path
                 new_element_path.parent.mkdir(parents=True, exist_ok=True)
                 try:
                     old_element_path.rename(new_element_path)
@@ -334,4 +329,4 @@ def merge(folder: Path, dry_run: bool = False) -> None:
             logger.info(f"{merged_files} files have been merged in '{subfolder}'")
 
 
-__all__ = ["create_structure", "move_files", "iterate", "scan", "merge"]
+__all__ = ["clean", "create_structure", "iterate", "merge", "move_files", "scan"]

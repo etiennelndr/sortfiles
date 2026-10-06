@@ -1,4 +1,5 @@
 import glob
+import logging
 import mimetypes
 import re
 from collections import defaultdict
@@ -13,6 +14,8 @@ from loguru import logger
 from tqdm import tqdm
 
 mimetypes.init()
+# Files without any EXIF are expected: do not let `exifread` warn about each of them
+logging.getLogger("exifread").setLevel(logging.ERROR)
 
 
 class FileType(Enum):

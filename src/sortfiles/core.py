@@ -67,32 +67,6 @@ for _raw_type in (ImageType.ARW, ImageType.CR2, ImageType.DNG, ImageType.NEF, Im
     mimetypes.add_type(f"image/{_raw_type.value}", f".{_raw_type.value}")
 
 
-@dataclass
-class FileInfo:
-    """File information."""
-
-    path: Path
-    type: FileType
-    creation_date: date
-
-
-def get_file_information(file_path: Path) -> FileInfo | None:
-    """Retrieves file information, or `None` if its type or its date cannot be determined."""
-    file_type = get_file_type(file_path)
-    if file_type is None:
-        return None
-
-    file_creation_date = retrieve_file_creation_date(file_path, file_type)
-    if file_creation_date is None:
-        return None
-
-    return FileInfo(
-        path=file_path,
-        type=file_type,
-        creation_date=file_creation_date,
-    )
-
-
 def get_file_type(file_path: Path) -> FileType | None:
     """Retrieves file type, or `None` if the path is not a file or its type is unsupported."""
     if not file_path.is_file():
@@ -122,7 +96,7 @@ def get_file_type(file_path: Path) -> FileType | None:
     return None
 
 
-def retrieve_file_creation_date(file_path: Path, file_type: FileType | None = None) -> date | None:
+def retrieve_file_creation_date(file_path: Path) -> date | None:
     """Retrieves the creation date of a file.
 
     The source of the date depends on the file type:
@@ -131,14 +105,9 @@ def retrieve_file_creation_date(file_path: Path, file_type: FileType | None = No
     - video: file system;
     - sidecar: date of the picture or the video it is attached to.
 
-    :param file_path: file path.
-    :param file_type: pre-computed file type, to avoid determining it again.
     :return: creation date, or `None` if the file is unsupported or is a sidecar without owner.
     """
-    if file_type is None:
-        file_type = get_file_type(file_path)
-
-    match file_type:
+    match get_file_type(file_path):
         case ImageType():
             try:
                 return _retrieve_creation_date_exif(file_path)
@@ -276,13 +245,13 @@ def scan(folder: Path) -> ScanResult:
             result.sorted_files.append(file_path_relative)
             continue
 
-        file_info = get_file_information(file_path)
-        if file_info is None:
+        file_creation_date = retrieve_file_creation_date(file_path)
+        if file_creation_date is None:
             logger.debug(f"Ignoring unsupported file '{file_path}'")
             result.unsupported_files.append(file_path_relative)
             continue
 
-        result.files[file_info.creation_date.replace(day=1)].append(file_path_relative)
+        result.files[file_creation_date.replace(day=1)].append(file_path_relative)
 
     return result
 

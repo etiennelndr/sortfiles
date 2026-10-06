@@ -80,8 +80,7 @@ def main_sort(folder: Path, clean: bool, dry_run: bool):
         core.create_structure(folder, scan_result)
 
     logger.info(f"Moving files in folder '{folder}'")
-    if not dry_run:
-        core.move_files(folder, scan_result)
+    core.move_files(folder, scan_result, dry_run=dry_run)
 
     if clean:
         logger.info("Cleaning old subfolders")
@@ -112,9 +111,7 @@ def main_merge(folder: Path, dry_run: bool) -> None:
         sys.exit(1)
 
     logger.info(f"Merging duplicate files in folder '{folder}'")
-    logger.info("Scanning input folder to extract dates and files")
-    if not dry_run:
-        core.merge(folder)
+    core.merge(folder, dry_run=dry_run)
 
 
 def run(argv: Sequence[str] | None = None) -> None:

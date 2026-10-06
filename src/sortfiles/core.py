@@ -219,17 +219,31 @@ def _compute_scan_result_size(scan_result: ScanResult) -> int:
     return sum(len(p) for p in scan_result.values())
 
 
-def move_files(folder: Path, scan_result: ScanResult) -> None:
+    :param folder: folder to sort.
+    :param scan_result: result of the scan of `folder`.
+    :param dry_run: whether to only log the moves instead of running them. Structure is not required
+    in this mode.
+
+def move_files(folder: Path, scan_result: ScanResult, dry_run: bool = False) -> None:
     """Moves files of a scan.
 
     Structure must be created before running this function. If not, an error is raised.
     """
     with tqdm(
-        desc=f"Moving files in {folder}", total=_compute_scan_result_size(scan_result)
+        desc=f"Moving files in {folder}",
+        total=_compute_scan_result_size(scan_result),
+        disable=dry_run,
     ) as pbar:
         for scan_date, scan_elements in scan_result.items():
             scan_date_folder = folder / str(scan_date.year) / str(scan_date.month).zfill(2)
-            if not scan_date_folder.exists():
+            if not dry_run and not scan_date_folder.exists():
+                if dry_run:
+                    already_exists = " (already exists)" if new_element_path.exists() else ""
+                    logger.info(
+                        f"Would move '{old_element_path}' to '{new_element_path}'{already_exists}"
+                    )
+                    continue
+
                 raise OSError(f"Date folder '{scan_date_folder}' does not exist")
 
             for element_path in scan_elements:
@@ -283,13 +297,19 @@ def _retrieve_deepest_subfolders(folder: Path) -> Iterator[Path]:
             yield path
 
 
-def merge(folder: Path) -> None:
-    """Merges duplicate files."""
+def merge(folder: Path, dry_run: bool = False) -> None:
+    """Merges duplicate files.
+
+    :param folder: folder containing the files to merge.
+    :param dry_run: whether to only log the merges instead of running them.
+    """
     for subfolder in _retrieve_deepest_subfolders(folder):
         logger.debug(f"Retrieving files from '{subfolder}'")
         merged_files = 0
         for file_path, file_info in tqdm(
-            iterate(subfolder, check_validity=False), desc=f"Merging files in {subfolder}"
+            iterate(subfolder, check_validity=False),
+            desc=f"Merging files in {subfolder}",
+            disable=dry_run,
         ):
             match file_info.type:
                 case ImageType.HEIC | ImageType.JPEG:
@@ -301,11 +321,17 @@ def merge(folder: Path) -> None:
                     new_file_stem = f"IMG_E{new_file_stem}"
                     new_file_path = file_path.with_stem(new_file_stem)
                     if new_file_path.exists():
-                        new_file_path.replace(file_path)
+                        if dry_run:
+                            logger.info(f"Would replace '{file_path}' with '{new_file_path}'")
+                        else:
+                            logger.debug(f"Replacing '{file_path}' with '{new_file_path}'")
+                            new_file_path.replace(file_path)
+                        merged_files += 2
 
-                    merged_files += 2
-
-        logger.debug(f"{merged_files} files have been merged")
+        if dry_run:
+            logger.info(f"{merged_files} files would be merged in '{subfolder}'")
+        else:
+            logger.info(f"{merged_files} files have been merged in '{subfolder}'")
 
 
 __all__ = ["create_structure", "move_files", "iterate", "scan", "merge"]

@@ -162,7 +162,8 @@ _EXIF_DATE_TAGS: Final = ("EXIF DateTimeOriginal", "EXIF DateTimeDigitized", "Im
 
 def _retrieve_creation_date_exif(file_path: Path) -> date:
     with file_path.open("rb") as file_path_stream:
-        file_img_exif = process_file(file_path_stream)
+        # Dates are stored in standard tags: maker notes and thumbnail are useless and slow to read
+        file_img_exif = process_file(file_path_stream, details=False, extract_thumbnail=False)
 
     for file_creation_date_tag in _EXIF_DATE_TAGS:
         if file_creation_date_tag not in file_img_exif:

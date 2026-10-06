@@ -245,10 +245,7 @@ def move_files(folder: Path, scan_result: ScanResult, dry_run: bool = False) -> 
                     continue
 
                 new_element_path.parent.mkdir(parents=True, exist_ok=True)
-                try:
-                    old_element_path.rename(new_element_path)
-                except FileExistsError:
-                    old_element_path.unlink()
+                old_element_path.replace(new_element_path)
 
                 # Update the progress after moving the file
                 pbar.update()

@@ -25,8 +25,12 @@ class FileType(Enum):
 class ImageType(FileType):
     """An enumeration of supported image types."""
 
+    ARW = "arw"
+    CR2 = "cr2"
+    DNG = "dng"
     HEIC = "heic"
     JPEG = "jpeg"
+    NEF = "nef"
     PNG = "png"
     RAW = "raw"
 
@@ -49,6 +53,12 @@ class SidecarType(FileType):
 
     AAE = "aae"
     XMP = "xmp"
+
+
+# MIME type of raw pictures is unknown or depends on the platform (e.g. `image/CR2` on Windows,
+# `image/x-canon-cr2` on Linux): register them to get the same detection everywhere.
+for _raw_type in (ImageType.ARW, ImageType.CR2, ImageType.DNG, ImageType.NEF, ImageType.RAW):
+    mimetypes.add_type(f"image/{_raw_type.value}", f".{_raw_type.value}")
 
 
 @dataclass
@@ -117,12 +127,12 @@ def retrieve_file_creation_date(file_path: Path, file_type: FileType | None = No
         file_type = get_file_type(file_path)
 
     match file_type:
-        case ImageType.JPEG | ImageType.PNG | ImageType.HEIC | ImageType.RAW:
+        case ImageType():
             try:
                 return _retrieve_creation_date_exif(file_path)
             except ValueError:
                 return _retrieve_creation_date_dummy(file_path)
-        case VideoType.MOV | VideoType.MP4:
+        case VideoType():
             return _retrieve_creation_date_dummy(file_path)
         case SidecarType():
             owner_path = _find_sidecar_owner(file_path)

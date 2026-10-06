@@ -73,5 +73,6 @@ the extension of the edited one: `IMG_1234.heic` and `IMG_E1234.jpg` are merged 
 Supported files
 ---------------
 
-- Pictures: HEIC, JPEG, PNG and RAW
+- Pictures: HEIC, JPEG, PNG and raw formats (ARW, CR2, DNG, NEF, RAW)
 - Videos: MOV and MP4
+- Sidecars: AAE and XMP

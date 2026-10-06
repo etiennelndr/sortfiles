@@ -233,18 +233,27 @@ def move_files(folder: Path, scan_result: ScanResult) -> None:
 
 
 def clean(folder: Path, scan_result: ScanResult) -> None:
-    """Cleans empty folders.
+    """Cleans the folders left empty after moving files.
 
-    This function must be run after moving files. If ran before, OS errors should be expected.
+    Folders which still contain something (e.g. unsupported files) are kept, and `folder` itself is
+    never removed. This function must be run after moving files.
     """
     for scan_elements in scan_result.values():
         for element_path in scan_elements:
-            old_element_path = folder / element_path
-            old_element_folder = old_element_path.parent
-            if not old_element_folder.exists():
-                continue
+            # Walk up from the old parent folder to the root folder (excluded)
+            for old_element_folder_relative in element_path.parents:
+                if not old_element_folder_relative.parts:
+                    break
 
-            old_element_folder.rmdir()
+                old_element_folder = folder / old_element_folder_relative
+                if not old_element_folder.exists():
+                    continue
+                if any(old_element_folder.iterdir()):
+                    logger.debug(f"Keeping non-empty folder '{old_element_folder}'")
+                    break
+
+                logger.debug(f"Removing empty folder '{old_element_folder}'")
+                old_element_folder.rmdir()
 
 
 def _retrieve_deepest_subfolders(folder: Path) -> Iterator[Path]:

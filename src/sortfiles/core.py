@@ -139,7 +139,15 @@ def _retrieve_creation_date_exif(file_path: Path) -> date:
 
 def _retrieve_creation_date_dummy(file_path: Path) -> date:
     info = file_path.stat()
-    return date.fromtimestamp(info.st_birthtime)
+    # Birth time is unavailable on some platforms (e.g. Linux). Moreover, a copy is a new file: its
+    # birth time is the date of the copy, whereas its modification time is usually preserved. The
+    # oldest of both is thus the closest to the real creation date.
+    file_timestamps = [info.st_mtime]
+    file_birthtime = getattr(info, "st_birthtime", None)
+    if file_birthtime is not None:
+        file_timestamps.append(file_birthtime)
+
+    return date.fromtimestamp(min(file_timestamps))
 
 
 _YEAR_PATTERN: Final = re.compile(r"^[1-9][0-9]{3}$")

@@ -7,11 +7,7 @@ from pathlib import Path
 import pytest
 
 from sortfiles.sort import ScanResult, clean, create_structure, is_valid, move_files, scan
-
-
-def _list_files(folder: Path) -> set[str]:
-    """Lists the files of a folder, as POSIX paths relative to it."""
-    return {p.relative_to(folder).as_posix() for p in folder.rglob("*") if p.is_file()}
+from tests.helpers import list_files
 
 
 @pytest.mark.parametrize(
@@ -83,7 +79,7 @@ def test_move_files_keeps_relative_path(tmp_path: Path, make_file: Callable[...,
     files_count = move_files(tmp_path, scan_result)
 
     assert files_count == 2
-    assert _list_files(tmp_path) == {"2019/06/a.jpg", "2021/03/holidays/b.jpg"}
+    assert list_files(tmp_path) == {"2019/06/a.jpg", "2021/03/holidays/b.jpg"}
 
 
 def test_move_files_moves_sidecar_with_its_owner(
@@ -96,7 +92,7 @@ def test_move_files_moves_sidecar_with_its_owner(
 
     move_files(tmp_path, scan_result)
 
-    assert _list_files(tmp_path) == {"2019/06/a.jpg", "2019/06/a.aae"}
+    assert list_files(tmp_path) == {"2019/06/a.jpg", "2019/06/a.aae"}
 
 
 def test_move_files_overwrites_existing_destination(
@@ -109,7 +105,7 @@ def test_move_files_overwrites_existing_destination(
 
     move_files(tmp_path, scan_result)
 
-    assert _list_files(tmp_path) == {"2019/06/a.jpg"}
+    assert list_files(tmp_path) == {"2019/06/a.jpg"}
     assert (tmp_path / "2019" / "06" / "a.jpg").read_bytes() == b"new"
 
 
@@ -128,7 +124,7 @@ def test_move_files_dry_run(tmp_path: Path, make_file: Callable[..., Path]) -> N
     files_count = move_files(tmp_path, scan_result, dry_run=True)
 
     assert files_count == 1
-    assert _list_files(tmp_path) == {"a.jpg"}
+    assert list_files(tmp_path) == {"a.jpg"}
     assert not (tmp_path / "2019").exists()
 
 
@@ -141,7 +137,7 @@ def test_clean_removes_empty_folders(tmp_path: Path, make_file: Callable[..., Pa
     clean(tmp_path, scan_result)
 
     assert not (tmp_path / "a").exists()
-    assert _list_files(tmp_path) == {"2019/06/a/b/c.jpg"}
+    assert list_files(tmp_path) == {"2019/06/a/b/c.jpg"}
 
 
 def test_clean_keeps_non_empty_folders(tmp_path: Path, make_file: Callable[..., Path]) -> None:
@@ -154,7 +150,7 @@ def test_clean_keeps_non_empty_folders(tmp_path: Path, make_file: Callable[..., 
     clean(tmp_path, scan_result)
 
     assert not (tmp_path / "a" / "b").exists()
-    assert _list_files(tmp_path) == {"2019/06/a/b/c.jpg", "a/notes.txt"}
+    assert list_files(tmp_path) == {"2019/06/a/b/c.jpg", "a/notes.txt"}
 
 
 def test_clean_keeps_root_folder(tmp_path: Path, make_file: Callable[..., Path]) -> None:
@@ -165,4 +161,4 @@ def test_clean_keeps_root_folder(tmp_path: Path, make_file: Callable[..., Path])
 
     clean(tmp_path, scan_result)
 
-    assert _list_files(tmp_path) == {"2019/06/a.jpg"}
+    assert list_files(tmp_path) == {"2019/06/a.jpg"}

@@ -7,10 +7,7 @@ from pathlib import Path
 import pytest
 from click.testing import Result
 
-
-def _list_files(folder: Path) -> set[str]:
-    """Lists the files of a folder, as POSIX paths relative to it."""
-    return {p.relative_to(folder).as_posix() for p in folder.rglob("*") if p.is_file()}
+from tests.helpers import list_files
 
 
 def test_sort(
@@ -22,7 +19,7 @@ def test_sort(
     result = run_cli("sort", tmp_path)
 
     assert result.exit_code == 0
-    assert _list_files(tmp_path) == {"2019/06/holidays/a.jpg", "notes.txt"}
+    assert list_files(tmp_path) == {"2019/06/holidays/a.jpg", "notes.txt"}
     assert (tmp_path / "holidays").is_dir()
 
 
@@ -34,7 +31,7 @@ def test_sort_clean(
     result = run_cli("sort", tmp_path, "--clean")
 
     assert result.exit_code == 0
-    assert _list_files(tmp_path) == {"2019/06/holidays/a.jpg"}
+    assert list_files(tmp_path) == {"2019/06/holidays/a.jpg"}
     assert not (tmp_path / "holidays").exists()
 
 
@@ -46,7 +43,7 @@ def test_sort_dry_run(
     result = run_cli("sort", tmp_path, "--clean", "--dry-run")
 
     assert result.exit_code == 0
-    assert _list_files(tmp_path) == {"holidays/a.jpg"}
+    assert list_files(tmp_path) == {"holidays/a.jpg"}
     assert not (tmp_path / "2019").exists()
 
 
@@ -59,7 +56,7 @@ def test_sort_without_file_to_sort(
     result = run_cli("sort", tmp_path)
 
     assert result.exit_code == 0
-    assert _list_files(tmp_path) == {"2019/06/a.jpg", "notes.txt"}
+    assert list_files(tmp_path) == {"2019/06/a.jpg", "notes.txt"}
 
 
 def test_merge(
@@ -71,7 +68,7 @@ def test_merge(
     result = run_cli("merge", tmp_path)
 
     assert result.exit_code == 0
-    assert _list_files(tmp_path) == {"IMG_0001.jpg"}
+    assert list_files(tmp_path) == {"IMG_0001.jpg"}
     assert (tmp_path / "IMG_0001.jpg").read_bytes() == b"edited"
 
 
@@ -84,7 +81,7 @@ def test_merge_dry_run(
     result = run_cli("merge", tmp_path, "--dry-run")
 
     assert result.exit_code == 0
-    assert _list_files(tmp_path) == {"IMG_0001.jpg", "IMG_E0001.jpg"}
+    assert list_files(tmp_path) == {"IMG_0001.jpg", "IMG_E0001.jpg"}
 
 
 @pytest.mark.parametrize("command", ["sort", "merge"])

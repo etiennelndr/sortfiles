@@ -1,4 +1,4 @@
-"""Fixtures building pictures holding EXIF metadata.
+"""Helpers building pictures holding EXIF metadata.
 
 References:
 
@@ -10,9 +10,6 @@ References:
 """
 
 import struct
-from collections.abc import Callable
-
-import pytest
 
 _TAG_IMAGE_DATE = 0x0132
 _TAG_EXIF_IFD = 0x8769
@@ -72,32 +69,26 @@ def _build_tiff(image_date: str | None, original_date: str | None) -> bytes:
     )
 
 
-@pytest.fixture
-def make_exif() -> Callable[..., bytes]:
-    """Returns a function building the content of a picture holding EXIF dates."""
+def make_exif(
+    *, image_date: str | None = None, original_date: str | None = None, jpeg: bool = True
+) -> bytes:
+    """Builds the content of a picture holding EXIF dates.
 
-    def _make_exif(
-        *, image_date: str | None = None, original_date: str | None = None, jpeg: bool = True
-    ) -> bytes:
-        """Builds the content of a picture.
+    Dates are given as they are stored in EXIF (e.g. `2019:03:02 10:00:00`).
 
-        Dates are given as they are stored in EXIF (e.g. `2019:03:02 10:00:00`).
+    :param image_date: value of the `Image DateTime` tag, which is not set if `None`.
+    :param original_date: value of the `EXIF DateTimeOriginal` tag, which is not set if `None`.
+    :param jpeg: whether to build a JPEG rather than a bare TIFF (as raw pictures are). The JPEG
+    only holds the APP1 marker segment embedding the TIFF: see Exif, section 4.7.2
+    "Interoperability Structure of APP1 in Compressed Data".
+    :return: content of the picture.
+    """
+    tiff = _build_tiff(image_date, original_date)
+    if not jpeg:
+        return tiff
 
-        :param image_date: value of the `Image DateTime` tag, which is not set if `None`.
-        :param original_date: value of the `EXIF DateTimeOriginal` tag, which is not set if `None`.
-        :param jpeg: whether to build a JPEG rather than a bare TIFF (as raw pictures are). The
-        JPEG only holds the APP1 marker segment embedding the TIFF: see Exif, section 4.7.2
-        "Interoperability Structure of APP1 in Compressed Data".
-        :return: content of the picture.
-        """
-        tiff = _build_tiff(image_date, original_date)
-        if not jpeg:
-            return tiff
-
-        segment = b"Exif\0\0" + tiff
-        return b"\xff\xd8\xff\xe1" + struct.pack(">H", len(segment) + 2) + segment + b"\xff\xd9"
-
-    return _make_exif
+    segment = b"Exif\0\0" + tiff
+    return b"\xff\xd8\xff\xe1" + struct.pack(">H", len(segment) + 2) + segment + b"\xff\xd9"
 
 
 __all__ = ["make_exif"]
